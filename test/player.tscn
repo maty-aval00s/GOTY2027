@@ -1,7 +1,9 @@
 [gd_scene format=3 uid="uid://dmxaoy1chryah"]
 
 [ext_resource type="Script" uid="uid://cylsxg1c16hsk" path="res://player/player.gd" id="1_s3mhm"]
-[ext_resource type="PackedScene" uid="uid://d2ei87j7hxl13" path="res://models/UAL2_Standard.glb" id="2_qqgw4"]
+[ext_resource type="PackedScene" uid="uid://db2nfpnpattpy" path="res://models/ucursitos2.glb" id="2_qqgw4"]
+[ext_resource type="AnimationLibrary" uid="uid://dv6ihghkpl00x" path="res://models/UAL1_Standard_RM.glb" id="3_jp3oe"]
+[ext_resource type="PackedScene" uid="uid://d2ei87j7hxl13" path="res://models/UAL2_Standard.glb" id="3_wvbbu"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hldr7"]
 
@@ -17,8 +19,73 @@ spring_length = 4.0
 [node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D" unique_id=817527026]
 transform = Transform3D(1, 0, 0, 0, 0.97037435, 0.2416063, 0, -0.2416063, 0.97037435, 0, 0.2677858, 3.3990493)
 
-[node name="UAL2_Standard" parent="." unique_id=484221154 instance=ExtResource("2_qqgw4")]
+[node name="UAL2_Standard" parent="." unique_id=190529878 instance=ExtResource("2_qqgw4")]
 transform = Transform3D(-0.9978922, 0, -0.06489456, 0, 1, 0, 0.06489456, 0, -0.9978922, 0, 0, 0)
+
+[node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 85218198) index="0" unique_id=2121876374]
+bones/1/position = Vector3(1.71485e-09, 0.7504685, -0.05010005)
+bones/1/rotation = Quaternion(0.06062676, 1.617594e-08, 3.0576535e-09, 0.99816054)
+bones/3/rotation = Quaternion(-0.05546876, -9.439549e-08, -9.996726e-09, 0.9984604)
+bones/4/rotation = Quaternion(-0.0002686717, 6.430246e-10, -2.3181006e-11, 1)
+bones/5/rotation = Quaternion(0.11098603, -2.1001588e-08, 7.306832e-09, 0.993822)
+bones/6/rotation = Quaternion(-0.090109654, 1.0923648e-08, -5.0165774e-09, 0.9959319)
+bones/7/rotation = Quaternion(-0.5229935, -0.46414614, -0.4913467, 0.519254)
+bones/8/rotation = Quaternion(0.03291896, 0.70969653, -0.009971094, 0.70366734)
+bones/9/rotation = Quaternion(0.021421907, -2.0525958e-05, 6.2292145e-07, 0.9997705)
+bones/10/rotation = Quaternion(-0.008619731, 4.3777774e-08, 4.5637015e-07, 0.99996287)
+bones/11/rotation = Quaternion(2.9802317e-07, 0.7071092, -1.4901156e-07, 0.7071043)
+bones/12/rotation = Quaternion(9.97789e-13, -1.7193783e-07, -1.5153549e-07, 1)
+bones/13/rotation = Quaternion(-1.6051569e-12, -1.2551448e-13, 2.4752723e-07, 1)
+bones/15/rotation = Quaternion(-0.016702179, 0.7069121, -0.016702773, 0.7069069)
+bones/16/rotation = Quaternion(-1.10481135e-08, -1.7211713e-07, 0.0015136003, 0.99999887)
+bones/17/rotation = Quaternion(8.171493e-09, -1.5795608e-11, -0.001129669, 0.9999994)
+bones/19/rotation = Quaternion(-0.023705836, 0.7067118, -0.023706501, 0.70670676)
+bones/20/rotation = Quaternion(6.2063537e-09, -1.7213546e-07, -0.00083428103, 0.99999964)
+bones/21/rotation = Quaternion(-4.408987e-09, 9.673996e-12, 0.00060956756, 0.9999998)
+bones/23/rotation = Quaternion(-0.01258851, 0.7069973, -0.012589078, 0.70699215)
+bones/24/rotation = Quaternion(-6.10521e-10, -1.7230948e-07, 1.2231059e-05, 1)
+bones/25/rotation = Quaternion(7.972916e-09, -2.0744321e-11, -0.0010670644, 0.99999946)
+bones/27/rotation = Quaternion(0.17118928, 0.82175857, 0.5142369, 0.17597589)
+bones/28/rotation = Quaternion(-6.980263e-05, -0.000115725226, 4.8615035e-05, 1)
+bones/29/rotation = Quaternion(3.7026617e-05, 0.0004296155, -0.000446737, 0.9999998)
+bones/31/rotation = Quaternion(-0.52299356, 0.46414614, 0.49134666, 0.519254)
+bones/32/rotation = Quaternion(0.03291894, -0.7096966, 0.009971096, 0.7036673)
+bones/33/rotation = Quaternion(0.021421846, 2.0562991e-05, -6.807027e-07, 0.9997705)
+bones/34/rotation = Quaternion(-0.008619734, -1.6298623e-07, -4.563699e-07, 0.99996287)
+bones/35/rotation = Quaternion(3.2782563e-07, -0.7071092, 1.7881392e-07, 0.70710444)
+bones/36/rotation = Quaternion(9.784942e-13, 1.9799847e-07, 1.5246684e-07, 1)
+bones/37/rotation = Quaternion(-1.6174098e-12, -1.12507714e-13, -2.475272e-07, 1)
+bones/38/rotation = Quaternion(-2.4752717e-07, 1, 7.902353e-13, -3.5325675e-06)
+bones/39/rotation = Quaternion(-0.016702179, -0.70691204, 0.0167028, 0.706907)
+bones/40/rotation = Quaternion(-1.10288285e-08, 1.9805947e-07, -0.0015135938, 0.99999887)
+bones/41/rotation = Quaternion(8.142783e-09, 1.1905401e-11, 0.0011296737, 0.9999994)
+bones/42/rotation = Quaternion(4.1909512e-08, 1, -1.1476882e-13, -3.6517758e-06)
+bones/43/rotation = Quaternion(-0.023705805, -0.7067118, 0.023706501, 0.70670676)
+bones/44/rotation = Quaternion(6.1961725e-09, 1.9745274e-07, 0.0008342289, 0.99999964)
+bones/45/rotation = Quaternion(-4.3941064e-09, -2.848529e-12, -0.0006095098, 0.9999998)
+bones/46/rotation = Quaternion(-2.7755576e-15, 1, -1.5847929e-14, -3.5325666e-06)
+bones/47/rotation = Quaternion(-0.012588451, -0.7069973, 0.012589137, 0.70699215)
+bones/48/rotation = Quaternion(-6.1035393e-10, 1.97688e-07, -1.2221746e-05, 1)
+bones/49/rotation = Quaternion(7.946803e-09, 5.210411e-12, 0.0010670653, 0.99999946)
+bones/50/rotation = Quaternion(1.8626436e-09, 1, -2.0563416e-13, -3.6517765e-06)
+bones/51/rotation = Quaternion(-0.17118931, 0.82175857, 0.5142371, -0.17597595)
+bones/52/rotation = Quaternion(-6.983336e-05, 0.000115826726, -4.863552e-05, 1)
+bones/53/rotation = Quaternion(3.700704e-05, -0.0004296006, 0.0004467407, 0.9999998)
+bones/55/rotation = Quaternion(0.9985262, 3.0990337e-09, 5.7021158e-08, 0.05427208)
+bones/56/rotation = Quaternion(0.065685086, -0.00013100135, -8.611721e-06, 0.9978404)
+bones/57/rotation = Quaternion(-0.5559502, -0.00032138012, 0.00036089803, 0.83121544)
+bones/58/rotation = Quaternion(-0.00013714898, 0.9643046, -0.26479492, -0.00049954106)
+bones/60/rotation = Quaternion(0.9985262, 9.78844e-09, 8.623702e-09, 0.054272056)
+bones/61/rotation = Quaternion(0.065685056, 0.00013100122, 8.627176e-06, 0.9978404)
+bones/62/rotation = Quaternion(-0.55595016, 0.00032138242, -0.00036089472, 0.8312155)
+bones/63/rotation = Quaternion(0.00013705369, 0.9643046, -0.26479498, 0.00049955543)
+
+[node name="AnimationPlayer2" type="AnimationPlayer" parent="UAL2_Standard" unique_id=68426989]
+libraries/UAL1_Standard_RM = ExtResource("3_jp3oe")
+
+[node name="xddx" parent="." unique_id=484221154 instance=ExtResource("3_wvbbu")]
+transform = Transform3D(-0.9978922, 0, -0.06489456, 0, 1, 0, 0.06489456, 0, -0.9978922, 0, 0, 0)
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1103991492]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -26,3 +93,5 @@ shape = SubResource("CapsuleShape3D_hldr7")
 
 [node name="Label3D" type="Label3D" parent="." unique_id=1565482282]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.552639, 0)
+
+[editable path="UAL2_Standard"]
