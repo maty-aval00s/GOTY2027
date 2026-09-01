@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://r2tgjq7jna23"
-path="res://.godot/imported/UAL1_Standard_RM.glb-6002962127812556a639b31dd396cccd.scn"
+uid="uid://cmhselnmel63t"
+path="res://.godot/imported/ucursitos2_UAL1_plus_default_dance.glb-c423187de2698b39c1d2a996efe9a5cf.scn"
 
 [deps]
 
-source_file="res://models/UAL1_Standard_RM.glb"
-dest_files=["res://.godot/imported/UAL1_Standard_RM.glb-6002962127812556a639b31dd396cccd.scn"]
+source_file="res://models/ucursitos2_UAL1_plus_default_dance.glb"
+dest_files=["res://.godot/imported/ucursitos2_UAL1_plus_default_dance.glb-c423187de2698b39c1d2a996efe9a5cf.scn"]
 
 [params]
 

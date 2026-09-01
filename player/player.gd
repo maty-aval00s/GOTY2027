@@ -13,6 +13,9 @@ extends CharacterBody3D
 @export var gravity_multiplier: float = 3.0
 @export var fall_gravity_multiplier: float = 4.5
 
+# Smoothing speed for remote players over the network
+@export var position_interpolate_speed: float = 20.0
+
 
 # ============================================================
 # Camera
@@ -66,7 +69,7 @@ const LAND_ANIMATION_SPEED: float = 2.0
 
 
 # ============================================================
-# Camera state
+# Camera & Interpolation state
 # ============================================================
 
 # Normal third-person vertical camera angle.
@@ -76,10 +79,20 @@ var base_camera_pitch: float = 0.0
 var free_look_yaw: float = 0.0
 var free_look_pitch: float = 0.0
 
-# Preserve whatever rotation CameraPivot already has
-# in the editor.
+# Preserve whatever rotation CameraPivot already has in the editor.
 var camera_center_yaw: float = 0.0
 var camera_center_roll: float = 0.0
+
+# Network Targets for Remote Interpolation
+var _target_position: Vector3 = Vector3.ZERO
+var _target_rotation: Vector3 = Vector3.ZERO
+
+# Remote state flags
+var _remote_is_on_floor: bool = true
+var _remote_was_on_floor: bool = true
+var _prev_position: Vector3 = Vector3.ZERO
+var _remote_velocity: Vector3 = Vector3.ZERO
+var _remote_just_jumped: bool = false
 
 
 # ============================================================
@@ -87,6 +100,10 @@ var camera_center_roll: float = 0.0
 # ============================================================
 
 func _ready() -> void:
+	_prev_position = global_position
+	_target_position = global_position
+	_target_rotation = global_rotation
+	
 	base_camera_pitch = camera_pivot.rotation.x
 	camera_center_yaw = camera_pivot.rotation.y
 	camera_center_roll = camera_pivot.rotation.z
@@ -198,20 +215,32 @@ func _input(event: InputEvent) -> void:
 
 
 # ============================================================
-# Camera recenter
+# Visual Process (Camera Recenter & Remote Interpolation)
 # ============================================================
 
 func _process(delta: float) -> void:
+	# --------------------------------------------------------
+	# Remote Player Visual Interpolation
+	# --------------------------------------------------------
 	if not is_multiplayer_authority():
+		global_position = global_position.lerp(
+			_target_position, 
+			position_interpolate_speed * delta
+		)
+		global_rotation.y = lerp_angle(
+			global_rotation.y, 
+			_target_rotation.y, 
+			position_interpolate_speed * delta
+		)
 		return
 
 
-	# While Alt is held, do not recenter anything.
+	# --------------------------------------------------------
+	# Authority Camera Recenter
+	# --------------------------------------------------------
 	if Input.is_key_pressed(KEY_ALT):
 		return
 
-
-	# Frame-rate-independent smoothing.
 	var weight: float = (
 		1.0
 		- exp(
@@ -220,21 +249,11 @@ func _process(delta: float) -> void:
 		)
 	)
 
-
-	# --------------------------------------------------------
-	# Horizontal recenter
-	# --------------------------------------------------------
-
 	free_look_yaw = lerp_angle(
 		free_look_yaw,
 		0.0,
 		weight
 	)
-
-
-	# --------------------------------------------------------
-	# Vertical recenter
-	# --------------------------------------------------------
 
 	free_look_pitch = lerp(
 		free_look_pitch,
@@ -242,15 +261,11 @@ func _process(delta: float) -> void:
 		weight
 	)
 
-
-	# Remove tiny floating-point leftovers.
-
 	if abs(free_look_yaw) < 0.0001:
 		free_look_yaw = 0.0
 
 	if abs(free_look_pitch) < 0.0001:
 		free_look_pitch = 0.0
-
 
 	_apply_camera_rotation()
 
@@ -269,26 +284,33 @@ func _apply_camera_rotation() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
-		return
+		if delta > 0.0:
+			_remote_velocity = (_target_position - _prev_position) / delta
+			_prev_position = _target_position
 
+		var is_moving: bool = Vector2(_remote_velocity.x, _remote_velocity.z).length() > 0.2
+		var just_landed: bool = not _remote_was_on_floor and _remote_is_on_floor
+		var just_jumped: bool = _remote_just_jumped
+
+		_remote_just_jumped = false
+		_remote_was_on_floor = _remote_is_on_floor
+
+		_update_animation_state(is_moving, _remote_is_on_floor, just_jumped, just_landed)
+		return
 
 	var was_on_floor: bool = is_on_floor()
 	var just_jumped: bool = false
 
-
 	# --------------------------------------------------------
 	# Gravity
 	# --------------------------------------------------------
-
 	if not is_on_floor():
-
 		if velocity.y < 0.0:
 			velocity += (
 				get_gravity()
 				* fall_gravity_multiplier
 				* delta
 			)
-
 		else:
 			velocity += (
 				get_gravity()
@@ -296,104 +318,47 @@ func _physics_process(delta: float) -> void:
 				* delta
 			)
 
-
 	# --------------------------------------------------------
 	# Jump
 	# --------------------------------------------------------
-
-	if (
-		is_on_floor()
-		and Input.is_action_just_pressed("jump")
-	):
+	if is_on_floor() and Input.is_action_just_pressed("jump"):
 		velocity.y = jump_speed
 		just_jumped = true
-
 
 	# --------------------------------------------------------
 	# Movement
 	# --------------------------------------------------------
-
 	var move_input: Vector2 = Input.get_vector(
 		"move_left",
 		"move_right",
 		"move_forward",
-		"move_backward"
+        "move_backward"
 	)
 
-
-	# Important:
-	# movement follows CHARACTER orientation even while
-	# Alt free-look is active.
-	#
-	# This means you can look behind yourself while continuing
-	# to run forward.
-	var direction: Vector3 = (
-		transform.basis
-		* Vector3(
-			move_input.x,
-			0.0,
-			move_input.y
-		)
-	)
-
-
-	var target: Vector2 = Vector2(
-		direction.x,
-		direction.z
-	) * move_speed
-
-
-	var current: Vector2 = Vector2(
-		velocity.x,
-		velocity.z
-	)
-
-
-	var result: Vector2 = current.move_toward(
-		target,
-		acceleration * delta
-	)
-
-
+	var direction: Vector3 = (transform.basis * Vector3(move_input.x, 0.0, move_input.y))
+	var target: Vector2 = Vector2(direction.x, direction.z) * move_speed
+	var current: Vector2 = Vector2(velocity.x, velocity.z)
+	var result: Vector2 = current.move_toward(target, acceleration * delta)
 	velocity.x = result.x
 	velocity.z = result.y
 
-
-	# --------------------------------------------------------
-	# Move
-	# --------------------------------------------------------
-
 	move_and_slide()
 
+	# Landing & Animation detection
+	var just_landed: bool = (not was_on_floor and is_on_floor())
+	var moving: bool = move_input.length_squared() > 0.01
+	var on_floor: bool = is_on_floor()
+
+	_update_animation_state(moving, on_floor, just_jumped, just_landed)
 
 	# --------------------------------------------------------
-	# Landing detection
+	# Network Sync
 	# --------------------------------------------------------
-
-	var just_landed: bool = (
-		not was_on_floor
-		and is_on_floor()
-	)
-
-
-	# --------------------------------------------------------
-	# Animation
-	# --------------------------------------------------------
-
-	_update_animation(
-		move_input,
-		just_jumped,
-		just_landed
-	)
-
-
-	# --------------------------------------------------------
-	# Multiplayer
-	# --------------------------------------------------------
-
 	send_data.rpc(
 		global_position,
-		global_rotation
+		global_rotation,
+		is_on_floor(),
+		just_jumped
 	)
 
 
@@ -401,88 +366,43 @@ func _physics_process(delta: float) -> void:
 # Animation state
 # ============================================================
 
-func _update_animation(
-	move_input: Vector2,
+func _update_animation_state(
+	moving: bool,
+	on_floor: bool,
 	just_jumped: bool,
 	just_landed: bool
 ) -> void:
-
-	var moving: bool = (
-		move_input.length_squared() > 0.01
-	)
-
-
-	# --------------------------------------------------------
-	# Landing
-	# --------------------------------------------------------
-
+	
+	# 1. Landing
 	if just_landed:
-
-		# Movement immediately cancels the landing animation.
 		if moving:
 			play_anim(ANIM_SPRINT)
-
 		else:
-			play_anim(
-				ANIM_JUMP_LAND,
-				LAND_ANIMATION_SPEED
-			)
-
+			play_anim(ANIM_JUMP_LAND, LAND_ANIMATION_SPEED)
 		return
 
-
-	# --------------------------------------------------------
-	# Jump start
-	# --------------------------------------------------------
-
+	# 2. Jump start
 	if just_jumped:
 		play_anim(ANIM_JUMP_START)
 		return
 
-
-	# --------------------------------------------------------
-	# Airborne
-	# --------------------------------------------------------
-
-	if not is_on_floor():
-
-		# Allow Jump_Start to finish first.
-		if (
-			anim_player.current_animation
-			== ANIM_JUMP_START
-			and anim_player.is_playing()
-		):
+	# 3. Airborne
+	if not on_floor:
+		if anim_player.current_animation == ANIM_JUMP_START and anim_player.is_playing():
 			return
-
 		play_anim(ANIM_JUMP_LOOP)
 		return
 
-
-	# --------------------------------------------------------
-	# Ground movement
-	# --------------------------------------------------------
-
+	# 4. Ground movement
 	if moving:
 		play_anim(ANIM_SPRINT)
 		return
 
-
-	# --------------------------------------------------------
-	# Finish landing only while stationary
-	# --------------------------------------------------------
-
-	if (
-		anim_player.current_animation
-		== ANIM_JUMP_LAND
-		and anim_player.is_playing()
-	):
+	# 5. Finish landing transition
+	if anim_player.current_animation == ANIM_JUMP_LAND and anim_player.is_playing():
 		return
 
-
-	# --------------------------------------------------------
-	# Idle
-	# --------------------------------------------------------
-
+	# 6. Idle
 	play_anim(ANIM_IDLE)
 
 
@@ -513,12 +433,17 @@ func test() -> void:
 @rpc(
 	"authority",
 	"call_remote",
-	"unreliable_ordered"
+    "unreliable_ordered"
 )
 func send_data(
 	pos: Vector3,
-	rot: Vector3
+	rot: Vector3,
+	on_floor: bool,
+	just_jumped: bool
 ) -> void:
 
-	global_position = pos
-	global_rotation = rot
+	_target_position = pos
+	_target_rotation = rot
+	_remote_is_on_floor = on_floor
+	if just_jumped:
+		_remote_just_jumped = true
