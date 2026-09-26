@@ -19,6 +19,10 @@ glow_enabled = true
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_56kpk"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_g4v7s"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_g4v7s"]
+
 [node name="TestScene" type="Node3D" unique_id=73546698]
 script = ExtResource("1_lr5j1")
 player_scene = ExtResource("2_lr5j1")
@@ -55,3 +59,40 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.626563, -0.021587849, 2.581
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.101407, -0.064763546, -43.108097)
 
 [node name="Players" type="Node3D" parent="." unique_id=1268151670]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=475615041]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -4.851568, 1.7790837, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=986888032]
+shape = SubResource("BoxShape3D_g4v7s")
+debug_color = Color(0, 0.79906386, 0.9268983, 1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D" unique_id=773143309]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0076487064, 0)
+mesh = SubResource("BoxMesh_g4v7s")
+skeleton = NodePath("../..")
+
+[node name="StaticBody3D2" type="StaticBody3D" parent="." unique_id=1811871473]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -2.1833448, 4.0105567, 9.434537)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D2" unique_id=578675034]
+shape = SubResource("BoxShape3D_g4v7s")
+debug_color = Color(0, 0.79906386, 0.9268983, 1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D2" unique_id=107007469]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0076487064, 0)
+mesh = SubResource("BoxMesh_g4v7s")
+skeleton = NodePath("../..")
+
+[node name="StaticBody3D3" type="StaticBody3D" parent="." unique_id=1939025563]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 5.770604, 5.962765, 14.347447)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D3" unique_id=1905006110]
+shape = SubResource("BoxShape3D_g4v7s")
+debug_color = Color(0, 0.79906386, 0.9268983, 1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D3" unique_id=1033391727]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0076487064, 0)
+layers = 2
+mesh = SubResource("BoxMesh_g4v7s")
+skeleton = NodePath("../..")
