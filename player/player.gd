@@ -32,8 +32,6 @@ extends CharacterBody3D
 # Higher = camera recenters faster after releasing Alt.
 @export var free_look_recenter_speed: float = 8.0
 
-# Closest the camera may sit behind the pivot. The spring arm shortens
-# when it hits a block; without this floor it ends up inside the mesh.
 @export var min_camera_distance: float = 3.2
 
 
@@ -137,7 +135,6 @@ var _remote_grapple_point: Vector3 = Vector3.ZERO
 # ============================================================
 
 func _ready() -> void:
-	# Run after SpringArm3D so the distance clamp is what gets drawn.
 	process_priority = 1
 	spring_arm.add_excluded_object(get_rid())
 	climb_anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS

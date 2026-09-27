@@ -2,10 +2,6 @@ class_name GrappleHook
 extends Node
 
 
-# ============================================================
-# Balance
-# ============================================================
-
 @export var max_range: float = 20.0
 @export var min_range: float = 1.0
 @export var pull_speed: float = 30.0
@@ -198,8 +194,6 @@ func _cast_from_camera(camera: Camera3D, body: Node3D, origin: Vector3) -> Dicti
 	if world == null:
 		return {}
 
-	# The crosshair is the center of the camera. The structures in the test
-	# scene are StaticBody3D on physics layer 1 (floor and scaled boxes).
 	var forward: Vector3 = -camera.global_basis.z
 	if forward.length_squared() < 0.0001:
 		return {}
