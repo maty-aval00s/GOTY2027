@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cylsxg1c16hsk" path="res://player/player.gd" id="1_s3mhm"]
 [ext_resource type="PackedScene" uid="uid://db2nfpnpattpy" path="res://models/ucursitos2.glb" id="2_qqgw4"]
 [ext_resource type="PackedScene" uid="uid://d2ei87j7hxl13" path="res://models/UAL2_Standard.glb" id="3_wvbbu"]
+[ext_resource type="Script" uid="uid://cq7n4grapple1" path="res://player/grapple_hook.gd" id="4_hook"]
 
 [sub_resource type="Animation" id="Animation_ne2ju"]
 resource_name = "mixamo_com"
@@ -17571,5 +17572,8 @@ target_position = Vector3(0, 0, 1)
 [node name="Ray2" type="RayCast3D" parent="." unique_id=2040199781]
 transform = Transform3D(1, 0, 0, 0, -1, 8.742278e-08, 0, -8.742278e-08, -1, 0, 1.5, 0)
 target_position = Vector3(0, 0, 1)
+
+[node name="GrappleHook" type="Node" parent="."]
+script = ExtResource("4_hook")
 
 [editable path="UAL2_Standard"]

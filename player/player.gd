@@ -32,12 +32,18 @@ extends CharacterBody3D
 # Higher = camera recenters faster after releasing Alt.
 @export var free_look_recenter_speed: float = 8.0
 
+# Closest the camera may sit behind the pivot. The spring arm shortens
+# when it hits a block; without this floor it ends up inside the mesh.
+@export var min_camera_distance: float = 3.2
+
 
 # ============================================================
 # Nodes
 # ============================================================
 
 @onready var camera_pivot: Node3D = $CameraPivot
+
+@onready var spring_arm: SpringArm3D = $CameraPivot/SpringArm3D
 
 @onready var camera_3d: Camera3D = \
 	$CameraPivot/SpringArm3D/Camera3D
@@ -56,6 +62,7 @@ extends CharacterBody3D
 #raycasts 
 @onready var ray_01:RayCast3D = $Ray1
 @onready var ray_02:RayCast3D = $Ray2
+@onready var grapple: GrappleHook = $GrappleHook
 
 
 # ============================================================
@@ -116,6 +123,10 @@ var onledge: bool = false
 var is_climbing: bool = false
 var last_floor_y:float =0.0
 var climb_cooldown:float = 0.0
+var role: Statics.Role = Statics.Role.NONE
+var _player_name: String = ""
+var _remote_grapple_visible: bool = false
+var _remote_grapple_point: Vector3 = Vector3.ZERO
 
 
 
@@ -126,6 +137,9 @@ var climb_cooldown:float = 0.0
 # ============================================================
 
 func _ready() -> void:
+	# Run after SpringArm3D so the distance clamp is what gets drawn.
+	process_priority = 1
+	spring_arm.add_excluded_object(get_rid())
 	climb_anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 	
 	_prev_position = global_position
@@ -140,14 +154,20 @@ func _ready() -> void:
 
 
 func setup(player_data: Statics.PlayerData) -> void:
-	label_3d.text = player_data.name
+	_player_name = player_data.name
+	role = player_data.role
+	if not Game.instance.player_updated.is_connected(_on_player_data_updated):
+		Game.instance.player_updated.connect(_on_player_data_updated)
 
 	set_multiplayer_authority(player_data.id)
+	_refresh_role_label()
 
 	camera_3d.current = is_multiplayer_authority()
 
 	if is_multiplayer_authority():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		_add_crosshair()
+		Debug.log("Rol: %s" % Statics.get_role_name(role), 6.0)
 
 
 # ============================================================
@@ -260,12 +280,20 @@ func _process(delta: float) -> void:
 			_target_rotation.y, 
 			position_interpolate_speed * delta
 		)
+		grapple.show_synced(
+			grapple.origin_from(self),
+			_remote_grapple_visible,
+			_remote_grapple_point
+		)
 		return
 
 
 	# --------------------------------------------------------
 	# Authority Camera Recenter
 	# --------------------------------------------------------
+	grapple.draw(grapple.origin_from(self))
+	_keep_camera_back()
+
 	if Input.is_key_pressed(KEY_ALT):
 		return
 
@@ -296,6 +324,15 @@ func _process(delta: float) -> void:
 		free_look_pitch = 0.0
 
 	_apply_camera_rotation()
+	_keep_camera_back()
+
+
+func _keep_camera_back() -> void:
+	var cam_pos: Vector3 = camera_3d.position
+	if cam_pos.z >= min_camera_distance:
+		return
+	cam_pos.z = min_camera_distance
+	camera_3d.position = cam_pos
 
 
 func _apply_camera_rotation() -> void:
@@ -333,17 +370,30 @@ func _physics_process(delta: float) -> void:
 	# Gravity
 	# --------------------------------------------------------
 	raycast_detect_ledge()
+	grapple.tick_cooldown(delta)
+	grapple.tick_retract(grapple.origin_from(self), delta)
 
 	if is_climbing:
+		grapple.cancel()
 		velocity = Vector3.ZERO
 		_update_animation_state(false, is_on_floor(), false, false, is_climbing)
-		send_data.rpc(global_position, global_rotation, is_on_floor(), false, is_climbing)
+		_send_state(false, is_climbing)
 		return
 
-	elif onledge and climb_cooldown<= 0.0:
+	_handle_grapple_input()
+
+	if grapple.is_pulling():
+		if grapple.advance_pull(self, delta):
+			move_and_slide()
+			var grapple_moving: bool = Vector2(velocity.x, velocity.z).length() > 0.2
+			_update_animation_state(grapple_moving, is_on_floor(), false, false, false)
+			_send_state(false, false)
+			return
+
+	if onledge and climb_cooldown<= 0.0:
 		start_climb()
 		_update_animation_state(false, is_on_floor(), false, false, is_climbing)
-		send_data.rpc(global_position, global_rotation, is_on_floor(), false, is_climbing)
+		_send_state(false, is_climbing)
 		return
 
 	else:
@@ -400,13 +450,7 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 	# Network Sync
 	# --------------------------------------------------------
-	send_data.rpc(
-		global_position,
-		global_rotation,
-		is_on_floor(),
-		just_jumped,
-		onledge
-	)
+	_send_state(just_jumped, onledge)
 
 #=============================================================
 #Ledge/Obstacle Detection
@@ -533,22 +577,104 @@ func test() -> void:
 	Debug.log(name, 10)
 
 
+func _handle_grapple_input() -> void:
+	if not Input.is_action_just_pressed("grapple"):
+		return
+	if role != Statics.Role.gancho and not grapple.is_pulling():
+		Debug.log("Rol: %s. El gancho es solo de gancho." % Statics.get_role_name(role))
+		return
+	if grapple.is_pulling():
+		grapple.cancel()
+		return
+	if is_climbing:
+		return
+	if grapple.is_on_cooldown():
+		Debug.log("Gancho en espera")
+		return
+	if not grapple.try_launch(role, camera_3d, self):
+		Debug.log("Sin superficie. Apuntá a un bloque o pared.")
+
+
+func _on_player_data_updated(id: int) -> void:
+	if id != get_multiplayer_authority():
+		return
+	var data: Statics.PlayerData = Game.instance.get_player(id)
+	if data == null:
+		return
+	role = data.role
+	_refresh_role_label()
+	if role != Statics.Role.gancho:
+		grapple.cancel()
+
+
+func _add_crosshair() -> void:
+	var layer: CanvasLayer = CanvasLayer.new()
+	layer.name = "Crosshair"
+	layer.layer = 20
+
+	var root: Control = Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(root)
+
+	var color: Color = Color(1, 1, 1, 0.95)
+	root.add_child(_crosshair_bar(color, -9.0, 9.0, -1.0, 1.0))
+	root.add_child(_crosshair_bar(color, -1.0, 1.0, -9.0, 9.0))
+	add_child(layer)
+
+
+func _crosshair_bar(color: Color, left: float, right: float, top: float, bottom: float) -> ColorRect:
+	var bar: ColorRect = ColorRect.new()
+	bar.color = color
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.set_anchors_preset(Control.PRESET_CENTER)
+	bar.offset_left = left
+	bar.offset_right = right
+	bar.offset_top = top
+	bar.offset_bottom = bottom
+	return bar
+
+
+func _refresh_role_label() -> void:
+	var role_name: String = Statics.get_role_name(role)
+	label_3d.text = "%s · %s" % [_player_name, role_name]
+	if is_multiplayer_authority():
+		Game.instance.player_id.text = "Rol: %s" % role_name
+		Game.instance.player_id.show()
+
+
+func _send_state(just_jumped: bool, ledge_flag: bool) -> void:
+	send_data.rpc(
+		global_position,
+		global_rotation,
+		is_on_floor(),
+		just_jumped,
+		ledge_flag,
+		grapple.is_rope_visible(),
+		grapple.rope_end()
+	)
+
+
 @rpc(
 	"authority",
 	"call_remote",
-    "unreliable_ordered"
+	"unreliable_ordered"
 )
 func send_data(
 	pos: Vector3,
 	rot: Vector3,
 	on_floor: bool,
 	just_jumped: bool,
-	on_ledge:bool
+	on_ledge:bool,
+	grapple_visible: bool,
+	grapple_point: Vector3
 ) -> void:
 
 	_target_position = pos
 	_target_rotation = rot
 	_remote_is_on_floor = on_floor
 	_remote_onledge = on_ledge
+	_remote_grapple_visible = grapple_visible
+	_remote_grapple_point = grapple_point
 	if just_jumped:
 		_remote_just_jumped = true
