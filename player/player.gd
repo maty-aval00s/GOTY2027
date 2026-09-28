@@ -62,6 +62,8 @@ extends CharacterBody3D
 @onready var ray_02:RayCast3D = $Ray2
 @onready var grapple: GrappleHook = $GrappleHook
 
+@onready var tag_zone: Area3D = $TagZone
+
 
 # ============================================================
 # Animations
@@ -125,8 +127,7 @@ var role: Statics.Role = Statics.Role.NONE
 var _player_name: String = ""
 var _remote_grapple_visible: bool = false
 var _remote_grapple_point: Vector3 = Vector3.ZERO
-
-
+var _tag_timer_label: Label
 
 
 
@@ -149,6 +150,8 @@ func _ready() -> void:
 
 	_apply_camera_rotation()
 
+	tag_zone.body_entered.connect(_on_tag_zone_body_entered)
+	TagGame.player_exploded.connect(_on_player_exploded)
 
 func setup(player_data: Statics.PlayerData) -> void:
 	_player_name = player_data.name
@@ -164,6 +167,7 @@ func setup(player_data: Statics.PlayerData) -> void:
 	if is_multiplayer_authority():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		_add_crosshair()
+		_add_tag_hud()
 		Debug.log("Rol: %s" % Statics.get_role_name(role), 6.0)
 
 
@@ -290,6 +294,13 @@ func _process(delta: float) -> void:
 	# --------------------------------------------------------
 	grapple.draw(grapple.origin_from(self))
 	_keep_camera_back()
+
+	if _tag_timer_label:
+		if TagGame.game_active and TagGame.it_player_id == get_multiplayer_authority():
+			_tag_timer_label.visible = true
+			_tag_timer_label.text = str(int(TagGame.time_left))
+		else:
+			_tag_timer_label.visible = false
 
 	if Input.is_key_pressed(KEY_ALT):
 		return
@@ -631,6 +642,38 @@ func _crosshair_bar(color: Color, left: float, right: float, top: float, bottom:
 	bar.offset_bottom = bottom
 	return bar
 
+func _add_tag_hud() -> void:
+	var layer: CanvasLayer = CanvasLayer.new()
+	layer.name = "TagHUD"
+	layer.layer = 20
+
+	_tag_timer_label = Label.new()
+	_tag_timer_label.add_theme_font_size_override("font_size", 32)
+	_tag_timer_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_tag_timer_label.offset_left = -100
+	_tag_timer_label.offset_top = 20
+	_tag_timer_label.visible = false
+	layer.add_child(_tag_timer_label)
+
+	add_child(layer)
+
+
+func _on_tag_zone_body_entered(body: Node3D) -> void:
+	if not is_multiplayer_authority():
+		return
+	if TagGame.it_player_id != get_multiplayer_authority():
+		return
+	if body == self or not body is Player:
+		return
+	TagGame.request_tag.rpc_id(1, body.get_multiplayer_authority())
+
+
+func _on_player_exploded(player_id: int) -> void:
+	if player_id != get_multiplayer_authority():
+		return
+	set_physics_process(false)
+	set_process(false)
+	visible = false  # ajustá esto según qué querés que pase visualmente al morir
 
 func _refresh_role_label() -> void:
 	var role_name: String = Statics.get_role_name(role)
