@@ -17436,7 +17436,7 @@ tracks/1/keys = {
 
 [sub_resource type="Animation" id="Animation_wvbbu"]
 resource_name = "SprintAnimation"
-length = 0.39999999999999997
+length = 0.4
 loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -17471,8 +17471,24 @@ _data = {
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hldr7"]
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_g4v7s"]
+
 [node name="Player" type="CharacterBody3D" unique_id=1817994250]
 script = ExtResource("1_s3mhm")
+max_move_speed = null
+move_speed = null
+jump_speed = null
+acceleration = null
+climb_forward_offset = null
+climb_up_offset = null
+gravity_multiplier = null
+fall_gravity_multiplier = null
+position_interpolate_speed = null
+mouse_sensitivity = null
+min_pitch = null
+max_pitch = null
+free_look_recenter_speed = null
+min_camera_distance = null
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=165174125]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6179214, 0)
@@ -17485,9 +17501,9 @@ spring_length = 4.0
 transform = Transform3D(1, 0, 0, 0, 0.99994516, -0.010471784, 0, 0.010471784, 0.99994516, 0, 0.2677858, 3.3990493)
 
 [node name="UAL2_Standard" parent="." unique_id=190529878 instance=ExtResource("2_qqgw4")]
-transform = Transform3D(-0.9979156, -0.016702209, -0.062333487, 0, 0.9659258, -0.25881904, 0.06453238, -0.25827956, -0.9639125, 0, 0.3, 0)
+transform = Transform3D(-0.9979156, -0.016702207, -0.062333487, 0, 0.96592575, -0.25881904, 0.06453238, -0.25827953, -0.9639125, 0, 0.3, 0)
 
-[node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 1847122977) index="0" unique_id=859661413]
+[node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 126601311) index="0" unique_id=864672464]
 bones/1/position = Vector3(0.018844556, 0.66232485, -0.045008466)
 bones/1/rotation = Quaternion(0.1099364, 0.0068344707, 0.047785077, 0.9927658)
 bones/3/rotation = Quaternion(0.110354505, 0.03678061, -0.060977843, 0.99133795)
@@ -17545,7 +17561,7 @@ bones/61/rotation = Quaternion(0.44495732, -0.009279337, 0.003965242, 0.89549494
 bones/62/rotation = Quaternion(-0.44980985, 0.022397816, -0.012638147, 0.892754)
 bones/63/rotation = Quaternion(0.00013704915, 0.9643046, -0.26479506, 0.00049955025)
 
-[node name="AnimationPlayer" parent="UAL2_Standard" index="1" unique_id=1468345654]
+[node name="AnimationPlayer" parent="UAL2_Standard" index="1" unique_id=787737]
 "libraries/Sprint To Wall Climb" = SubResource("AnimationLibrary_3v1qs")
 
 [node name="AnimationPlayer2" type="AnimationPlayer" parent="UAL2_Standard" unique_id=68426989]
@@ -17573,7 +17589,13 @@ target_position = Vector3(0, 0, 1)
 transform = Transform3D(1, 0, 0, 0, -1, 8.742278e-08, 0, -8.742278e-08, -1, 0, 1.5, 0)
 target_position = Vector3(0, 0, 1)
 
-[node name="GrappleHook" type="Node" parent="."]
+[node name="GrappleHook" type="Node" parent="." unique_id=1887494792]
 script = ExtResource("4_hook")
+
+[node name="TagZone" type="Area3D" parent="." unique_id=109240376]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TagZone" unique_id=807930475]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1.4453228, -0.43803906)
+shape = SubResource("CapsuleShape3D_g4v7s")
 
 [editable path="UAL2_Standard"]

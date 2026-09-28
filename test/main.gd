@@ -14,3 +14,6 @@ func _ready() -> void:
 		player_inst.setup(player_data)
 		var spawn_point: Node3D = spawn_points.get_child(i)
 		player_inst.global_position = spawn_point.global_position
+		
+	if multiplayer.is_server():
+		TagGame.start_game()
