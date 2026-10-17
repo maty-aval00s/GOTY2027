@@ -8,6 +8,7 @@
 [ext_resource type="Material" uid="uid://dn02iyw2h4s28" path="res://assets/materials/bricks_std.tres" id="6_nugeq"]
 [ext_resource type="Texture2D" uid="uid://d10fvt5u07jj0" path="res://assets/textures/Grass/Grass_22-128x128.png" id="6_oxkfd"]
 [ext_resource type="Texture2D" uid="uid://jpwxqsimd2ls" path="res://assets/textures/images.png" id="8_wsmb6"]
+[ext_resource type="Texture2D" uid="uid://cqewapsit0x0c" path="res://assets/textures/minecraft_lava.jpg" id="9_ff32x"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_wgpb3"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -20,14 +21,6 @@ sky_material = SubResource("ProceduralSkyMaterial_wgpb3")
 background_mode = 2
 sky = SubResource("Sky_56kpk")
 glow_enabled = true
-
-[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_f3wwr"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1wp7y"]
-albedo_texture = ExtResource("2_g0ll8")
-uv1_scale = Vector3(10, 10, 10)
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_xi6nk"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_f3wwr"]
 size = Vector3(5, 15, 180)
@@ -66,6 +59,7 @@ uv1_triplanar = true
 uv1_world_triplanar = true
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bhunq"]
+size = Vector3(60, 1, 150)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nugeq"]
 albedo_texture = ExtResource("6_oxkfd")
@@ -75,6 +69,26 @@ uv1_world_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_riqys"]
 size = Vector3(60, 1, 150)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yb6w5"]
+albedo_texture = ExtResource("2_g0ll8")
+uv1_scale = Vector3(0.05, 0.05, 0.05)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8kqym"]
+albedo_texture = ExtResource("2_g0ll8")
+uv1_scale = Vector3(0.1, 0.1, 0.1)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4bynt"]
+albedo_texture = ExtResource("9_ff32x")
+uv1_scale = Vector3(0.1, 0.1, 0.1)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_bhunq"]
 
 [node name="Fortress" type="Node3D" unique_id=1192298573]
 script = ExtResource("1_wgpb3")
@@ -103,17 +117,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -153.87776, 0, -153.6521)
 [node name="Player" parent="." unique_id=1817994250 instance=ExtResource("1_uwm34")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.041501045, 0, 0.40297508)
 visible = false
-
-[node name="plane" type="StaticBody3D" parent="." unique_id=81880451]
-transform = Transform3D(200, 0, 0, 0, 200, 0, 0, 0, 200, 0, 0, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="plane" unique_id=1691377011]
-shape = SubResource("WorldBoundaryShape3D_f3wwr")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="plane" unique_id=2018946334]
-material_override = SubResource("StandardMaterial3D_1wp7y")
-mesh = SubResource("PlaneMesh_xi6nk")
-skeleton = NodePath("../..")
 
 [node name="FortressGeometry" type="Node3D" parent="." unique_id=1162633631]
 
@@ -189,11 +192,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -86, 0, 0)
 [node name="StaticBody3D" type="StaticBody3D" parent="FortressGeometry/Garden" unique_id=557036765]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="FortressGeometry/Garden/StaticBody3D" unique_id=276102261]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 3, 0)
 shape = SubResource("BoxShape3D_bhunq")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="FortressGeometry/Garden/StaticBody3D" unique_id=775654473]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0.1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0.1, 0)
 material_override = SubResource("StandardMaterial3D_nugeq")
 mesh = SubResource("BoxMesh_riqys")
 
@@ -203,9 +206,9 @@ mesh = SubResource("BoxMesh_riqys")
 use_collision = true
 
 [node name="outer_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom" unique_id=1863901535]
-transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 19, 0)
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 9, 0)
 radius = 67.0
-height = 40.0
+height = 60.0
 sides = 6
 material = ExtResource("6_nugeq")
 
@@ -443,6 +446,27 @@ texture = ExtResource("8_wsmb6")
 [node name="CSGCylinder3D" type="CSGCylinder3D" parent="FortressGeometry/MainTower" unique_id=829949494]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 201, 0)
 height = 20.0
+
+[node name="ground" type="CSGCombiner3D" parent="." unique_id=731108753]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8, 0)
+use_collision = true
+
+[node name="CSGBox3D" type="CSGBox3D" parent="ground" unique_id=1089608532]
+transform = Transform3D(400, 0, 0, 0, 20, 0, 0, 0, 400, 0, -18, 0)
+material = SubResource("StandardMaterial3D_yb6w5")
+
+[node name="lava_moat" type="CSGCylinder3D" parent="ground" unique_id=307980883]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, -16, 0)
+operation = 2
+radius = 85.0
+height = 20.0
+sides = 6
+material = SubResource("StandardMaterial3D_8kqym")
+
+[node name="lava" type="MeshInstance3D" parent="ground" unique_id=911919959]
+transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 100, 0, -23, 0)
+material_override = SubResource("StandardMaterial3D_4bynt")
+mesh = SubResource("PlaneMesh_bhunq")
 
 [editable path="FortressGeometry/OuterWalls/south_wall"]
 [editable path="FortressGeometry/OuterWalls/north_wall_left"]

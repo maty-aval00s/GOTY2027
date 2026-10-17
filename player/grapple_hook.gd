@@ -34,6 +34,8 @@ var _stuck_time: float = 0.0
 var _last_distance: float = 0.0
 var _retract_tip: Vector3 = Vector3.ZERO
 
+@export var release_momentum_multiplier: float = 0.8
+
 var _rope: MeshInstance3D
 var _cylinder: CylinderMesh
 
@@ -173,7 +175,7 @@ func show_synced(origin: Vector3, active: bool, point: Vector3) -> void:
 
 
 func _end_pull(body: CharacterBody3D) -> void:
-	body.velocity = Vector3.ZERO
+	body.velocity *= release_momentum_multiplier
 	_begin_retract()
 
 

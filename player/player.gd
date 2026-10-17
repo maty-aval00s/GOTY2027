@@ -72,6 +72,7 @@ extends CharacterBody3D
 # Controllers
 @onready var grapple: GrappleHook = $GrappleHook
 @onready var slide: SlideController = $SlideController
+@onready var dash: DashController = $Dash
 
 
 @onready var tag_zone: Area3D = $TagZone
@@ -401,7 +402,7 @@ func _process(delta: float) -> void:
 		grapple.origin_from(self)
 	)
 
-	_keep_camera_back()
+	#_keep_camera_back()
 
 
 	if _tag_timer_label:
@@ -455,7 +456,7 @@ func _process(delta: float) -> void:
 
 
 	_apply_camera_rotation()
-	_keep_camera_back()
+	#_keep_camera_back()
 
 
 func _keep_camera_back() -> void:
@@ -563,7 +564,7 @@ func _physics_process(delta: float) -> void:
 
 
 	grapple.tick_cooldown(delta)
-
+		
 	grapple.tick_retract(
 		grapple.origin_from(self),
 		delta
@@ -571,7 +572,7 @@ func _physics_process(delta: float) -> void:
 
 
 	slide.tick_cooldown(delta)
-
+	dash.tick_cooldown(delta)
 
 	# --------------------------------------------------------
 	# Climbing
@@ -615,7 +616,7 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	_handle_grapple_input()
-
+	_handle_dash_input()
 
 	# --------------------------------------------------------
 	# Grapple movement
@@ -750,11 +751,13 @@ func _physics_process(delta: float) -> void:
 	# Slide start
 	# --------------------------------------------------------
 
-	if Input.is_action_just_pressed("crouch"):
+	if (
+		Input.is_action_just_pressed("crouch")
+		and not dash.is_dashing()
+	):
 
 		if slide.can_start(self):
 			slide.start(self)
-
 			start_slide_animation()
 
 
@@ -810,6 +813,24 @@ func _physics_process(delta: float) -> void:
 		)
 
 
+		return
+
+	# --------------
+	# Dash
+	# --------------
+	if dash.advance(self, delta):
+
+		move_and_slide()
+
+		_update_animation_state(
+			true,
+			is_on_floor(),
+			false,
+			false,
+			false
+		)
+
+		_send_state(false, false)
 		return
 
 
@@ -1406,6 +1427,26 @@ func _handle_grapple_input() -> void:
 		)
 
 
+# ======================
+# Dash
+# ======================
+
+func _handle_dash_input() -> void:
+
+	if not Input.is_action_just_pressed("dash"):
+		return
+
+	if not dash.try_start(role, self):
+
+		if role != Statics.Role.rapido:
+			Debug.log(
+				"Rol: %s. El dash es solo de rapido."
+				% Statics.get_role_name(role)
+			)
+
+		elif dash.is_on_cooldown():
+			Debug.log("Dash en espera")
+
 # ============================================================
 # Player Data
 # ============================================================
@@ -1433,6 +1474,9 @@ func _on_player_data_updated(
 
 	if role != Statics.Role.gancho:
 		grapple.cancel()
+		
+	if role != Statics.Role.rapido:
+		dash.cancel(self)
 
 
 # ============================================================

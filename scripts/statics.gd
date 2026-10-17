@@ -4,7 +4,7 @@ extends Node
 
 const MAX_CLIENTS: int = 3
 const PORT: int = 5409 # Number between 1024 and 65535.
-const ARENA_SCENE_PATH: String = "res://scenes/match/match.tscn"
+const ARENA_SCENE_PATH: String = "res://scenes/match/levels/fortress/fortress.tscn"
 
 
 enum Role {
