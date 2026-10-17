@@ -16,7 +16,7 @@ const ARENA_SCENE_PATH: String = "res://scenes/match/match.tscn"
 @onready var game_start_container: PanelContainer = %GameStartContainer
 @onready var game_start_counter: Label = %GameStartCounter
 
-var LOBBY_PLAYER_SCENE: PackedScene = preload("res://lobby/lobby_player.tscn")
+var LOBBY_PLAYER_SCENE: PackedScene = preload("res://scenes/lobby/lobby_player.tscn")
 
 
 func _ready() -> void:

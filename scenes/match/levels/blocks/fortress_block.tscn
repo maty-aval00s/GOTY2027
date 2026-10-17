@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://cvdwnhoxbtr5r"]
+
+[ext_resource type="Texture2D" uid="uid://cku0lxgy0kayb" path="res://assets/textures/Bricks/Bricks_01-128x128.png" id="1_y8xdv"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bhunq"]
+albedo_texture = ExtResource("1_y8xdv")
+uv1_scale = Vector3(3, 3, 3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_riqys"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bhunq"]
+
+[node name="FortressBlock" type="StaticBody3D" unique_id=830706516]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2115995866]
+material_override = SubResource("StandardMaterial3D_bhunq")
+mesh = SubResource("BoxMesh_riqys")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1790453153]
+shape = SubResource("BoxShape3D_bhunq")

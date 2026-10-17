@@ -1,12 +1,10 @@
 [gd_scene format=3 uid="uid://bpbc81lwktlxs"]
 
 [ext_resource type="Script" uid="uid://b6e84r7fxxg4h" path="res://autoloads/lobby.gd" id="1_485el"]
-[ext_resource type="Theme" uid="uid://bwgdrcgopd0s1" path="res://lobby/lobby_theme.tres" id="1_boshi"]
+[ext_resource type="Theme" uid="uid://bwgdrcgopd0s1" path="res://scenes/lobby/lobby_theme.tres" id="1_boshi"]
 
 [node name="Lobby" type="Node" unique_id=1348032977]
 script = ExtResource("1_485el")
-return_to_lobby_on_player_disconnect = null
-debug = null
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1401741461]
 layer = 64

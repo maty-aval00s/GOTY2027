@@ -1,19 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://57sil4m6nfve"]
+[gd_scene format=3 uid="uid://cgsspji18smle"]
 
-[ext_resource type="Theme" uid="uid://bwgdrcgopd0s1" path="res://lobby/lobby_theme.tres" id="1_bob82"]
-[ext_resource type="Script" uid="uid://cuqvj8grm28qy" path="res://ui/credits.gd" id="2_hvxmk"]
+[ext_resource type="Theme" uid="uid://bwgdrcgopd0s1" path="res://scenes/lobby/lobby_theme.tres" id="1_0ce57"]
 
-[node name="Credits" type="Control"]
+[node name="LobbyScreen" type="Control" unique_id=1742965517]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("1_bob82")
-script = ExtResource("2_hvxmk")
+theme = ExtResource("1_0ce57")
 
-[node name="MarginContainer2" type="MarginContainer" parent="."]
+[node name="MarginContainer2" type="MarginContainer" parent="." unique_id=1891048044]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,16 +20,16 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_type_variation = &"Zero"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer2"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer2" unique_id=1702470448]
 layout_mode = 2
 theme_type_variation = &"Zero"
 
-[node name="Panel" type="Panel" parent="MarginContainer2/VBoxContainer"]
+[node name="Panel" type="Panel" parent="MarginContainer2/VBoxContainer" unique_id=519010346]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.5
 
-[node name="Label" type="Label" parent="MarginContainer2/VBoxContainer/Panel"]
+[node name="Label" type="Label" parent="MarginContainer2/VBoxContainer/Panel" unique_id=1499382565]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -47,11 +45,10 @@ size_flags_horizontal = 4
 size_flags_vertical = 10
 size_flags_stretch_ratio = 0.5
 theme_type_variation = &"Title"
-text = "Credits
-"
+text = "Screen"
 horizontal_alignment = 1
 
-[node name="BackButton" type="Button" parent="MarginContainer2/VBoxContainer/Panel"]
+[node name="BackButton" type="Button" parent="MarginContainer2/VBoxContainer/Panel" unique_id=316504777]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -65,16 +62,16 @@ offset_right = -250.0
 offset_bottom = -4.0
 text = "く"
 
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer2/VBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer2/VBoxContainer" unique_id=744298589]
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Zero"
 
-[node name="Control" type="Control" parent="MarginContainer2/VBoxContainer/MarginContainer"]
+[node name="Control" type="Control" parent="MarginContainer2/VBoxContainer/MarginContainer" unique_id=1946858550]
 layout_mode = 2
 theme_type_variation = &"Zero"
 
-[node name="MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer" type="RichTextLabel" parent="MarginContainer2/VBoxContainer/MarginContainer/Control"]
+[node name="MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer" type="PanelContainer" parent="MarginContainer2/VBoxContainer/MarginContainer/Control" unique_id=795054426]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -87,8 +84,3 @@ offset_bottom = 290.0
 grow_horizontal = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-bbcode_enabled = true
-text = "[center]
-[b]Lobby[/b]
-Elías Zelada
-[/center]"

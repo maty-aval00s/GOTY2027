@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://doxhjphvl3gad"]
+
+[ext_resource type="PackedScene" uid="uid://dmxaoy1chryah" path="res://scenes/match/player/player.tscn" id="1_uwm34"]
+[ext_resource type="Texture2D" uid="uid://cyglbb34xjpux" path="res://assets/textures/Bricks/Bricks_16-128x128.png" id="2_g0ll8"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_wgpb3"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_56kpk"]
+sky_material = SubResource("ProceduralSkyMaterial_wgpb3")
+
+[sub_resource type="Environment" id="Environment_8vf6s"]
+background_mode = 2
+sky = SubResource("Sky_56kpk")
+glow_enabled = true
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_f3wwr"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1wp7y"]
+albedo_texture = ExtResource("2_g0ll8")
+uv1_scale = Vector3(10, 10, 10)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_xi6nk"]
+
+[node name="Fortress" type="Node3D" unique_id=1192298573]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=946888873]
+environment = SubResource("Environment_8vf6s")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=946367104]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=623898857]
+
+[node name="Marker3D" type="Marker3D" parent="SpawnPoints" unique_id=525149652]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -20.73177)
+
+[node name="Marker3D2" type="Marker3D" parent="SpawnPoints" unique_id=1555666727]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 19.902063)
+
+[node name="Marker3D3" type="Marker3D" parent="SpawnPoints" unique_id=265287334]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.013668, 0, 0)
+
+[node name="Players" type="Node3D" parent="." unique_id=772132285]
+
+[node name="Player" parent="." unique_id=1817994250 instance=ExtResource("1_uwm34")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.041501045, 0, 0.40297508)
+visible = false
+
+[node name="plane" type="StaticBody3D" parent="." unique_id=81880451]
+transform = Transform3D(100, 0, 0, 0, 100, 0, 0, 0, 100, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="plane" unique_id=1691377011]
+shape = SubResource("WorldBoundaryShape3D_f3wwr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="plane" unique_id=2018946334]
+material_override = SubResource("StandardMaterial3D_1wp7y")
+mesh = SubResource("PlaneMesh_xi6nk")
+skeleton = NodePath("../..")
