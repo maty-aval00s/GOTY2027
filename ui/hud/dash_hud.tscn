@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://dn4onxgnowxe5"]
+
+[ext_resource type="Script" uid="uid://bh0xqo3j8tseg" path="res://ui/hud/dash_hud.gd" id="1_l122k"]
+
+[node name="DashHud" type="CanvasLayer" unique_id=1696213792]
+layer = 20
+script = ExtResource("1_l122k")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=476760518]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -54.0
+offset_right = 40.0
+grow_vertical = 0
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer" unique_id=82282372]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/PanelContainer" unique_id=849242579]
+layout_mode = 2
+
+[node name="ChargesLabel" type="Label" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=1863108229]
+layout_mode = 2
+
+[node name="ChargeBar" type="ProgressBar" parent="MarginContainer/PanelContainer/VBoxContainer" unique_id=606770676]
+custom_minimum_size = Vector2(220, 18)
+layout_mode = 2
+show_percentage = false

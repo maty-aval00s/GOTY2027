@@ -39,15 +39,14 @@ extends CharacterBody3D
 # Nodes
 # ============================================================
 
+
+
 @onready var camera_pivot: Node3D = $CameraPivot
-
 @onready var spring_arm: SpringArm3D = $CameraPivot/SpringArm3D
-
 @onready var camera_3d: Camera3D = \
 	$CameraPivot/SpringArm3D/Camera3D
 
 @onready var label_3d: Label3D = $Label3D
-
 
 # Idle / Sprint / Jump
 @onready var anim_player: AnimationPlayer = \
@@ -77,6 +76,13 @@ extends CharacterBody3D
 
 @onready var tag_zone: Area3D = $TagZone
 
+# ===================
+# hud
+# ===================
+const DASH_HUD_SCENE := preload(
+	"res://ui/hud/dash_hud.tscn"
+)
+var _dash_hud: DashHud
 
 # ============================================================
 # Animations
@@ -237,6 +243,17 @@ func _ready() -> void:
 		_on_player_exploded
 	)
 
+func _add_dash_hud() -> void:
+	_dash_hud = DASH_HUD_SCENE.instantiate()
+
+	add_child(_dash_hud)
+
+	_dash_hud.bind(dash)
+
+	_dash_hud.visible = (
+		role == Statics.Role.rapido
+	)
+
 
 func setup(player_data: Statics.PlayerData) -> void:
 	_player_name = player_data.name
@@ -264,6 +281,7 @@ func setup(player_data: Statics.PlayerData) -> void:
 
 		_add_crosshair()
 		_add_tag_hud()
+		_add_dash_hud()
 
 		Debug.log(
 			"Rol: %s" % Statics.get_role_name(role),
@@ -572,7 +590,7 @@ func _physics_process(delta: float) -> void:
 
 
 	slide.tick_cooldown(delta)
-	dash.tick_cooldown(delta)
+	dash.tick(delta)
 
 	# --------------------------------------------------------
 	# Climbing
@@ -1707,6 +1725,11 @@ func _refresh_role_label() -> void:
 		)
 
 		Game.instance.player_id.show()
+	
+	if _dash_hud:
+		_dash_hud.visible = (
+			role == Statics.Role.rapido
+		)
 
 
 # ============================================================

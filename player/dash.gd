@@ -2,9 +2,22 @@ class_name DashController
 extends Node
 
 
-@export var speed: float = 42.0
-@export var duration: float = 0.18
-@export var cooldown: float = 1.0
+signal meter_changed(
+	value: float,
+	maximum: float,
+	whole_charges: int
+)
+
+
+@export var speed: float = 80.0
+@export var duration: float = 0.2
+@export var cooldown: float = 0.1
+
+# N: cantidad máxima de dashes guardados.
+@export var max_charges: int = 5
+
+# Segundos para recuperar una carga.
+@export var recharge_time_per_charge: float = 3.0
 
 
 enum State {
@@ -15,10 +28,19 @@ enum State {
 
 var state: State = State.IDLE
 
+var _charges: int = 0
+var _recharge_progress: float = 0.0
+
 var _cooldown_left: float = 0.0
 var _time_left: float = 0.0
 var _direction: Vector3 = Vector3.ZERO
 var _velocity_before_dash: Vector3 = Vector3.ZERO
+
+
+func _ready() -> void:
+	max_charges = maxi(max_charges, 1)
+	_charges = max_charges
+	_emit_meter_changed()
 
 
 func is_dashing() -> bool:
@@ -29,12 +51,28 @@ func is_on_cooldown() -> bool:
 	return _cooldown_left > 0.0
 
 
-func tick_cooldown(delta: float) -> void:
-	if _cooldown_left > 0.0:
-		_cooldown_left = maxf(
-			_cooldown_left - delta,
-			0.0
+func has_charges() -> bool:
+	return _charges > 0
+
+
+func meter_value() -> float:
+	var partial_charge: float = 0.0
+
+	if (
+		_charges < max_charges
+		and recharge_time_per_charge > 0.0
+	):
+		partial_charge = (
+			_recharge_progress
+			/ recharge_time_per_charge
 		)
+
+	return float(_charges) + partial_charge
+
+
+func tick(delta: float) -> void:
+	_tick_cooldown(delta)
+	_tick_recharge(delta)
 
 
 func try_start(
@@ -51,7 +89,9 @@ func try_start(
 	if is_on_cooldown():
 		return false
 
-	# Frente horizontal del jugador.
+	if not has_charges():
+		return false
+
 	_direction = -body.global_transform.basis.z
 	_direction.y = 0.0
 
@@ -60,9 +100,11 @@ func try_start(
 
 	_direction = _direction.normalized()
 
-	# Guardamos solo la velocidad horizontal previa.
 	_velocity_before_dash = body.velocity
 	_velocity_before_dash.y = 0.0
+
+	_charges -= 1
+	_emit_meter_changed()
 
 	_time_left = duration
 	state = State.DASHING
@@ -70,8 +112,6 @@ func try_start(
 	return true
 
 
-# Devuelve true mientras Player debe ejecutar move_and_slide()
-# usando la velocidad del dash.
 func advance(
 	body: CharacterBody3D,
 	delta: float
@@ -80,7 +120,6 @@ func advance(
 	if not is_dashing():
 		return false
 
-	# El dash ya terminó en el frame anterior.
 	if _time_left <= 0.0:
 		_end_dash(body)
 		return false
@@ -106,14 +145,54 @@ func cancel(
 	_end_dash(body)
 
 
+func _tick_cooldown(delta: float) -> void:
+	if _cooldown_left > 0.0:
+		_cooldown_left = maxf(
+			_cooldown_left - delta,
+			0.0
+		)
+
+
+func _tick_recharge(delta: float) -> void:
+	if _charges >= max_charges:
+		return
+
+	if recharge_time_per_charge <= 0.0:
+		_charges = max_charges
+		_recharge_progress = 0.0
+		_emit_meter_changed()
+		return
+
+	_recharge_progress += delta
+
+	while (
+		_recharge_progress >= recharge_time_per_charge
+		and _charges < max_charges
+	):
+		_recharge_progress -= recharge_time_per_charge
+		_charges += 1
+
+	if _charges >= max_charges:
+		_recharge_progress = 0.0
+
+	_emit_meter_changed()
+
+
 func _end_dash(
 	body: CharacterBody3D
 ) -> void:
 
-	# Restauramos la velocidad que tenía antes de dashear.
-	# El slide nunca recibe la velocidad de `speed`.
+	# El slide recibe la velocidad previa, nunca la del dash.
 	body.velocity.x = _velocity_before_dash.x
 	body.velocity.z = _velocity_before_dash.z
 
 	state = State.IDLE
 	_cooldown_left = cooldown
+
+
+func _emit_meter_changed() -> void:
+	meter_changed.emit(
+		meter_value(),
+		float(max_charges),
+		_charges
+	)

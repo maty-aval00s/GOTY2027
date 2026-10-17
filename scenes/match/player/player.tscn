@@ -17594,7 +17594,6 @@ metadata/_custom_type_script = "uid://dgg78avaosu8g"
 
 [node name="Dash" type="Node" parent="." unique_id=1269636484]
 script = ExtResource("6_t0itt")
-speed = 80.0
-cooldown = 0.5
+speed = 100.0
 
 [editable path="UAL2_Standard"]
