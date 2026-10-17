@@ -4,7 +4,7 @@ signal it_changed(player_id: int, time_left: float)
 signal player_exploded(player_id: int)
 signal game_over(winner_id: int)
 
-const START_TIME: float = 50.0
+const START_TIME: float = 1000.0
 const TAG_COOLDOWN: float = 1.0
 const SYNC_INTERVAL: float = 1.0
 

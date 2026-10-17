@@ -1,0 +1,451 @@
+[gd_scene format=3 uid="uid://doxhjphvl3gad"]
+
+[ext_resource type="PackedScene" uid="uid://dmxaoy1chryah" path="res://scenes/match/player/player.tscn" id="1_uwm34"]
+[ext_resource type="Script" uid="uid://fawi8jnc2wgh" path="res://scenes/match/levels/fortress/fortress.gd" id="1_wgpb3"]
+[ext_resource type="Texture2D" uid="uid://cyglbb34xjpux" path="res://assets/textures/Bricks/Bricks_16-128x128.png" id="2_g0ll8"]
+[ext_resource type="PackedScene" uid="uid://cvdwnhoxbtr5r" path="res://scenes/match/levels/blocks/fortress_block.tscn" id="4_wgpb3"]
+[ext_resource type="Texture2D" uid="uid://cku0lxgy0kayb" path="res://assets/textures/Bricks/Bricks_01-128x128.png" id="5_8vf6s"]
+[ext_resource type="Material" uid="uid://dn02iyw2h4s28" path="res://assets/materials/bricks_std.tres" id="6_nugeq"]
+[ext_resource type="Texture2D" uid="uid://d10fvt5u07jj0" path="res://assets/textures/Grass/Grass_22-128x128.png" id="6_oxkfd"]
+[ext_resource type="Texture2D" uid="uid://jpwxqsimd2ls" path="res://assets/textures/images.png" id="8_wsmb6"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_wgpb3"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_56kpk"]
+sky_material = SubResource("ProceduralSkyMaterial_wgpb3")
+
+[sub_resource type="Environment" id="Environment_8vf6s"]
+background_mode = 2
+sky = SubResource("Sky_56kpk")
+glow_enabled = true
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_f3wwr"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1wp7y"]
+albedo_texture = ExtResource("2_g0ll8")
+uv1_scale = Vector3(10, 10, 10)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_xi6nk"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_f3wwr"]
+size = Vector3(5, 15, 180)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1wp7y"]
+size = Vector3(5, 15, 180)
+
+[sub_resource type="BoxMesh" id="BoxMesh_xi6nk"]
+size = Vector3(5, 15, 80)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ol6h1"]
+size = Vector3(5, 15, 80)
+
+[sub_resource type="BoxMesh" id="BoxMesh_yreh3"]
+size = Vector3(5, 15, 80)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wfcxp"]
+size = Vector3(5, 15, 80)
+
+[sub_resource type="BoxMesh" id="BoxMesh_webbh"]
+size = Vector3(10, 15, 300)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ulo8i"]
+size = Vector3(10, 15, 300)
+
+[sub_resource type="BoxMesh" id="BoxMesh_br3dr"]
+size = Vector3(10, 15, 300)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_f2jf3"]
+size = Vector3(10, 15, 300)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_58upi"]
+albedo_texture = ExtResource("5_8vf6s")
+uv1_scale = Vector3(0.2, 0.2, 0.2)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bhunq"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nugeq"]
+albedo_texture = ExtResource("6_oxkfd")
+uv1_scale = Vector3(0.05, 0.05, 0.05)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_riqys"]
+size = Vector3(60, 1, 150)
+
+[node name="Fortress" type="Node3D" unique_id=1192298573]
+script = ExtResource("1_wgpb3")
+player_scene = ExtResource("1_uwm34")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=946888873]
+environment = SubResource("Environment_8vf6s")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=946367104]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=623898857]
+
+[node name="Marker3D" type="Marker3D" parent="SpawnPoints" unique_id=525149652]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 143.96422, 0, -140.86845)
+
+[node name="Marker3D2" type="Marker3D" parent="SpawnPoints" unique_id=1555666727]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 151.43982)
+
+[node name="Marker3D3" type="Marker3D" parent="SpawnPoints" unique_id=265287334]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -153.87776, 0, -153.6521)
+
+[node name="Players" type="Node3D" parent="." unique_id=772132285]
+
+[node name="Player" parent="." unique_id=1817994250 instance=ExtResource("1_uwm34")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.041501045, 0, 0.40297508)
+visible = false
+
+[node name="plane" type="StaticBody3D" parent="." unique_id=81880451]
+transform = Transform3D(200, 0, 0, 0, 200, 0, 0, 0, 200, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="plane" unique_id=1691377011]
+shape = SubResource("WorldBoundaryShape3D_f3wwr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="plane" unique_id=2018946334]
+material_override = SubResource("StandardMaterial3D_1wp7y")
+mesh = SubResource("PlaneMesh_xi6nk")
+skeleton = NodePath("../..")
+
+[node name="FortressGeometry" type="Node3D" parent="." unique_id=1162633631]
+
+[node name="OuterWalls" type="Node3D" parent="FortressGeometry" unique_id=660266028]
+
+[node name="south_wall" parent="FortressGeometry/OuterWalls" unique_id=830706516 instance=ExtResource("4_wgpb3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -145, 7.5, 0)
+
+[node name="MeshInstance3D" parent="FortressGeometry/OuterWalls/south_wall" index="0" unique_id=2115995866]
+mesh = SubResource("BoxMesh_f3wwr")
+
+[node name="CollisionShape3D" parent="FortressGeometry/OuterWalls/south_wall" index="1" unique_id=1790453153]
+shape = SubResource("BoxShape3D_1wp7y")
+
+[node name="north_wall_left" parent="FortressGeometry/OuterWalls" unique_id=220976434 instance=ExtResource("4_wgpb3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 150, 7.5, 48)
+
+[node name="MeshInstance3D" parent="FortressGeometry/OuterWalls/north_wall_left" index="0" unique_id=2115995866]
+mesh = SubResource("BoxMesh_xi6nk")
+
+[node name="CollisionShape3D" parent="FortressGeometry/OuterWalls/north_wall_left" index="1" unique_id=1790453153]
+shape = SubResource("BoxShape3D_ol6h1")
+
+[node name="north_wall_right" parent="FortressGeometry/OuterWalls" unique_id=198158798 instance=ExtResource("4_wgpb3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 150, 7.5, -48)
+
+[node name="MeshInstance3D" parent="FortressGeometry/OuterWalls/north_wall_right" index="0" unique_id=2115995866]
+mesh = SubResource("BoxMesh_yreh3")
+
+[node name="CollisionShape3D" parent="FortressGeometry/OuterWalls/north_wall_right" index="1" unique_id=1790453153]
+shape = SubResource("BoxShape3D_wfcxp")
+
+[node name="east_wall" parent="FortressGeometry/OuterWalls" unique_id=322970358 instance=ExtResource("4_wgpb3")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1.9999994, 7.5, -91)
+
+[node name="MeshInstance3D" parent="FortressGeometry/OuterWalls/east_wall" index="0" unique_id=2115995866]
+mesh = SubResource("BoxMesh_webbh")
+
+[node name="CollisionShape3D" parent="FortressGeometry/OuterWalls/east_wall" index="1" unique_id=1790453153]
+shape = SubResource("BoxShape3D_ulo8i")
+
+[node name="west_wall" parent="FortressGeometry/OuterWalls" unique_id=1203388979 instance=ExtResource("4_wgpb3")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 2.0000074, 7.5, 89)
+
+[node name="MeshInstance3D" parent="FortressGeometry/OuterWalls/west_wall" index="0" unique_id=2115995866]
+mesh = SubResource("BoxMesh_br3dr")
+
+[node name="CollisionShape3D" parent="FortressGeometry/OuterWalls/west_wall" index="1" unique_id=1790453153]
+shape = SubResource("BoxShape3D_f2jf3")
+
+[node name="GateArch" type="CSGCombiner3D" parent="FortressGeometry/OuterWalls" unique_id=1131486745]
+use_collision = true
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="FortressGeometry/OuterWalls/GateArch" unique_id=1072639509]
+transform = Transform3D(-1.0927847e-06, -5, 0, 25, -2.1855695e-07, 0, 0, 0, 25, 150, 14, 0)
+height = 1.0
+material = SubResource("StandardMaterial3D_58upi")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="FortressGeometry/OuterWalls/GateArch" unique_id=830963697]
+transform = Transform3D(5, 0, 0, 0, 15, 0, 0, 0, 35, 150, 7.25, 0)
+operation = 2
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="FortressGeometry/OuterWalls/GateArch" unique_id=2128933826]
+transform = Transform3D(-7.430936e-07, -5, 0, 17, -2.1855695e-07, 0, 0, 0, 17, 150, 14, 0)
+operation = 2
+height = 1.0
+material = ExtResource("6_nugeq")
+
+[node name="Garden" type="Node3D" parent="FortressGeometry" unique_id=304698474]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -86, 0, 0)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="FortressGeometry/Garden" unique_id=557036765]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FortressGeometry/Garden/StaticBody3D" unique_id=276102261]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("BoxShape3D_bhunq")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="FortressGeometry/Garden/StaticBody3D" unique_id=775654473]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0.1, 0)
+material_override = SubResource("StandardMaterial3D_nugeq")
+mesh = SubResource("BoxMesh_riqys")
+
+[node name="MainTower" type="Node3D" parent="FortressGeometry" unique_id=1860680184]
+
+[node name="outer_cylinder_bottom" type="CSGCombiner3D" parent="FortressGeometry/MainTower" unique_id=369669750]
+use_collision = true
+
+[node name="outer_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom" unique_id=1863901535]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 19, 0)
+radius = 67.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom" unique_id=1503137188]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 18, 0)
+operation = 2
+radius = 60.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall2" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom" unique_id=13715139]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 21, 0)
+operation = 2
+radius = 40.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom" unique_id=1851074152]
+transform = Transform3D(140, 0, 0, 0, 10, 0, 0, 0, 5, 0, 4, 0)
+operation = 2
+material = ExtResource("6_nugeq")
+
+[node name="spikes" type="Node3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom" unique_id=84357483]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom/spikes" unique_id=946709555]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 50, 64)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom/spikes" unique_id=952335435]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54, 50, 32)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom/spikes" unique_id=1108170287]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54, 50, -32)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom/spikes" unique_id=1639963966]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 50, 31)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom/spikes" unique_id=60775560]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 50, -64)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_bottom/spikes" unique_id=2136146686]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 50, -31)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="outer_cylinder_middle" type="CSGCombiner3D" parent="FortressGeometry/MainTower" unique_id=2018295961]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 40, 0)
+use_collision = true
+
+[node name="outer_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_middle" unique_id=1948883305]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 19, 0)
+radius = 44.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_middle" unique_id=1860402151]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 26, 0)
+operation = 2
+radius = 25.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall2" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_middle" unique_id=2044557933]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 18, 0)
+operation = 2
+radius = 40.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="doors" type="CSGBox3D" parent="FortressGeometry/MainTower/outer_cylinder_middle" unique_id=1230866686]
+transform = Transform3D(140, 0, 0, 0, 10, 0, 0, 0, 5, 0, 4, 0)
+operation = 2
+material = ExtResource("6_nugeq")
+
+[node name="doors2" type="CSGBox3D" parent="FortressGeometry/MainTower/outer_cylinder_middle" unique_id=39805111]
+transform = Transform3D(69.99999, 0, 4.3301272, 0, 10, 0, -121.24356, 0, 2.4999998, 0, 4, 0)
+operation = 2
+material = ExtResource("6_nugeq")
+
+[node name="doors3" type="CSGBox3D" parent="FortressGeometry/MainTower/outer_cylinder_middle" unique_id=1446928072]
+transform = Transform3D(-70, 0, 4.330127, 0, 10, 0, -121.24356, 0, -2.5000005, 0, 4, 0)
+operation = 2
+material = ExtResource("6_nugeq")
+
+[node name="outer_cylinder_top" type="CSGCombiner3D" parent="FortressGeometry/MainTower" unique_id=759513574]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 80.100006, 0)
+use_collision = true
+
+[node name="outer_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top" unique_id=731313174]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 24, 0)
+radius = 25.0
+height = 50.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top" unique_id=702984824]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 26, 0)
+operation = 2
+radius = 10.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall2" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top" unique_id=1773398809]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 18, 0)
+operation = 2
+radius = 23.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="spikes" type="Node3D" parent="FortressGeometry/MainTower/outer_cylinder_top" unique_id=1014806652]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top/spikes" unique_id=1486474014]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 60, 20)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top/spikes" unique_id=222495711]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 60, 10)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top/spikes" unique_id=694957615]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 60, -11)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top/spikes" unique_id=277477297]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 60, 9)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top/spikes" unique_id=1248272981]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 60, -20)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top/spikes" unique_id=1878515873]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 60, -12)
+use_collision = true
+radius = 6.0
+height = 30.0
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="outer_cylinder_top2" type="CSGCombiner3D" parent="FortressGeometry/MainTower" unique_id=370004717]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 120.100006, 0)
+use_collision = true
+
+[node name="outer_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top2" unique_id=304391261]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 24, 0)
+radius = 15.0
+height = 30.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top2" unique_id=1287070562]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 26, 0)
+operation = 2
+radius = 7.0
+height = 30.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="mask_wall2" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top2" unique_id=1875647167]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 18, 0)
+operation = 2
+radius = 7.0
+height = 40.0
+sides = 6
+material = ExtResource("6_nugeq")
+
+[node name="outer_wall2" type="CSGCylinder3D" parent="FortressGeometry/MainTower/outer_cylinder_top2" unique_id=1529189483]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 58, 0)
+radius = 15.0
+height = 40.0
+sides = 6
+cone = true
+material = ExtResource("6_nugeq")
+
+[node name="Sprite3D" type="Sprite3D" parent="FortressGeometry/MainTower" unique_id=738296398]
+transform = Transform3D(4.330127, 0, -2.5, 0, 5, 0, 2.5, 0, 4.330127, -5.1961517, 204.6, -3)
+texture = ExtResource("8_wsmb6")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="FortressGeometry/MainTower" unique_id=829949494]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 201, 0)
+height = 20.0
+
+[editable path="FortressGeometry/OuterWalls/south_wall"]
+[editable path="FortressGeometry/OuterWalls/north_wall_left"]
+[editable path="FortressGeometry/OuterWalls/north_wall_right"]
+[editable path="FortressGeometry/OuterWalls/east_wall"]
+[editable path="FortressGeometry/OuterWalls/west_wall"]

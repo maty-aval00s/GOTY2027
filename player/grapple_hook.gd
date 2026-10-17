@@ -2,10 +2,10 @@ class_name GrappleHook
 extends Node
 
 
-@export var max_range: float = 20.0
+@export var max_range: float = 40.0
 @export var min_range: float = 1.0
 @export var pull_speed: float = 30.0
-@export var cooldown: float = 1.4
+@export var cooldown: float = 1.0
 @export var max_duration: float = 1.2
 @export var retract_speed: float = 45.0
 @export var stop_distance: float = 0.85
@@ -186,7 +186,7 @@ func _begin_retract() -> void:
 func _is_valid_target(collider: Object) -> bool:
 	if collider == null or collider is CharacterBody3D:
 		return false
-	return collider is PhysicsBody3D
+	return collider is PhysicsBody3D or collider is CSGShape3D
 
 
 func _cast_from_camera(camera: Camera3D, body: Node3D, origin: Vector3) -> Dictionary:
