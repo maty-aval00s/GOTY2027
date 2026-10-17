@@ -9,7 +9,15 @@ extends CharacterBody3D
 @export var max_move_speed: float = 14.0
 @export var move_speed: float = 14.0
 @export var jump_speed: float = 15.0
-@export var acceleration: float = 300.0
+
+# Ground movement responds quickly, but does not snap instantly.
+@export var ground_acceleration: float = 70.0
+@export var ground_deceleration: float = 55.0
+
+# Air movement adds steering acceleration without deleting momentum.
+@export var air_acceleration: float = 24.0
+@export var air_drag: float = 0.20
+
 @export var climb_forward_offset: float = -0.9
 @export var climb_up_offset: float = 0.3
 
@@ -72,6 +80,7 @@ extends CharacterBody3D
 @onready var grapple: GrappleHook = $GrappleHook
 @onready var slide: SlideController = $SlideController
 @onready var dash: DashController = $Dash
+@onready var bomb: BombController = $BombController
 
 
 @onready var tag_zone: Area3D = $TagZone
@@ -206,6 +215,22 @@ func _ready() -> void:
 		return
 
 	process_priority = 1
+
+	add_to_group("players")
+
+	if not bomb.bomb_launched.is_connected(
+		_on_bomb_launched
+	):
+		bomb.bomb_launched.connect(
+			_on_bomb_launched
+		)
+
+	if not bomb.bomb_exploded.is_connected(
+		_on_bomb_exploded
+	):
+		bomb.bomb_exploded.connect(
+			_on_bomb_exploded
+		)
 
 	spring_arm.add_excluded_object(get_rid())
 
@@ -591,6 +616,7 @@ func _physics_process(delta: float) -> void:
 
 	slide.tick_cooldown(delta)
 	dash.tick(delta)
+	bomb.tick(delta)
 
 	# --------------------------------------------------------
 	# Climbing
@@ -635,6 +661,7 @@ func _physics_process(delta: float) -> void:
 
 	_handle_grapple_input()
 	_handle_dash_input()
+	_handle_bomb_input()
 
 	# --------------------------------------------------------
 	# Grapple movement
@@ -893,25 +920,80 @@ func _physics_process(delta: float) -> void:
 
 
 	# --------------------------------------------------------
-	# Acceleration
+	# Horizontal movement
 	# --------------------------------------------------------
 
-	var target: Vector2 = Vector2(
-		direction.x,
-		direction.z
-	) * move_speed
-
-
-	var current: Vector2 = Vector2(
+	var horizontal_velocity: Vector2 = Vector2(
 		velocity.x,
 		velocity.z
 	)
 
+	var result: Vector2 = horizontal_velocity
 
-	var result: Vector2 = current.move_toward(
-		target,
-		acceleration * delta
-	)
+
+	if is_on_floor():
+
+		var target: Vector2 = Vector2(
+			direction.x,
+			direction.z
+		) * move_speed
+
+		var ground_rate: float = (
+			ground_acceleration
+			if move_input.length_squared() > 0.01
+			else ground_deceleration
+		)
+
+		result = horizontal_velocity.move_toward(
+			target,
+			ground_rate * delta
+		)
+
+	else:
+
+		# Drag suave y continuo. No borra un impulso de golpe.
+		result *= exp(
+			-air_drag * delta
+		)
+
+		var input_strength: float = minf(
+			move_input.length(),
+			1.0
+		)
+
+		if input_strength > 0.001:
+
+			var wish_direction: Vector2 = Vector2(
+				direction.x,
+				direction.z
+			).normalized()
+
+			var wish_speed: float = (
+				move_speed * input_strength
+			)
+
+			# Solo agrega aceleración en la dirección elegida.
+			# Presionar en contra reduce el momentum gradualmente;
+			# presionar a favor no limita un impulso más rápido.
+			var current_along_wish: float = (
+				result.dot(wish_direction)
+			)
+
+			var speed_to_add: float = (
+				wish_speed - current_along_wish
+			)
+
+			if speed_to_add > 0.0:
+
+				var acceleration_step: float = minf(
+					speed_to_add,
+					air_acceleration * delta
+				)
+
+				result += (
+					wish_direction
+					* acceleration_step
+				)
 
 
 	velocity.x = result.x
@@ -1454,6 +1536,10 @@ func _handle_dash_input() -> void:
 	if not Input.is_action_just_pressed("dash"):
 		return
 
+	# Dash y slide son mutuamente excluyentes.
+	if slide.active:
+		return
+
 	if not dash.try_start(role, self):
 
 		if role != Statics.Role.rapido:
@@ -1464,6 +1550,164 @@ func _handle_dash_input() -> void:
 
 		elif dash.is_on_cooldown():
 			Debug.log("Dash en espera")
+
+# ============================================================
+# Bomb
+# ============================================================
+
+func _handle_bomb_input() -> void:
+
+	if not Input.is_action_just_pressed("bomb"):
+		return
+
+	if bomb.try_launch(
+		role,
+		camera_3d,
+		self
+	):
+		return
+
+	if role != Statics.Role.doble_vida:
+
+		Debug.log(
+			"La bomba es solo del rol doble vida."
+		)
+
+	elif bomb.is_on_cooldown():
+
+		Debug.log(
+			"Bomba en espera"
+		)
+
+
+func _on_bomb_launched(
+	origin: Vector3,
+	initial_velocity: Vector3
+) -> void:
+
+	if not is_multiplayer_authority():
+		return
+
+	_spawn_bomb_remote.rpc(
+		origin,
+		initial_velocity
+	)
+
+
+func _on_bomb_exploded(
+	center: Vector3,
+	radius: float,
+	force: float,
+	falloff_exponent: float,
+	center_height: float
+) -> void:
+
+	if not is_multiplayer_authority():
+		return
+
+	_explode_bomb_for_everyone.rpc(
+		center,
+		radius,
+		force,
+		falloff_exponent,
+		center_height
+	)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _spawn_bomb_remote(
+	origin: Vector3,
+	initial_velocity: Vector3
+) -> void:
+
+	bomb.spawn_remote(
+		origin,
+		initial_velocity,
+		self
+	)
+
+
+@rpc("authority", "call_local", "reliable")
+func _explode_bomb_for_everyone(
+	center: Vector3,
+	radius: float,
+	force: float,
+	falloff_exponent: float,
+	center_height: float
+) -> void:
+
+	for node: Node in get_tree().get_nodes_in_group("players"):
+
+		var player: Player = node as Player
+
+		if (
+			player != null
+			and player.is_multiplayer_authority()
+		):
+			player.receive_bomb_impulse(
+				center,
+				radius,
+				force,
+				falloff_exponent,
+				center_height
+			)
+
+
+func receive_bomb_impulse(
+	center: Vector3,
+	radius: float,
+	force: float,
+	falloff_exponent: float,
+	center_height: float
+) -> void:
+
+	if not is_multiplayer_authority():
+		return
+
+	var body_center: Vector3 = (
+		global_position
+		+ Vector3.UP * center_height
+	)
+
+	var offset: Vector3 = body_center - center
+	var distance: float = offset.length()
+
+	if distance >= radius:
+		return
+
+	var normalized_distance: float = (
+		distance / radius
+	)
+
+	var falloff: float = pow(
+		1.0 - normalized_distance,
+		falloff_exponent
+	)
+
+	var direction: Vector3 = Vector3.UP
+
+	if distance > 0.001:
+		direction = offset / distance
+
+	# Una explosión interrumpe otras habilidades de movimiento.
+	if grapple.is_pulling():
+		grapple.cancel()
+
+	if dash.is_dashing():
+		dash.cancel(self)
+
+	if slide.active:
+		slide.stop()
+		stop_slide_animation()
+
+	var impulse: Vector3 = direction * force * falloff
+
+	# Una sola velocidad física: conserva el momentum existente
+	# y suma el impulso radial en los tres ejes.
+	velocity += impulse
+
+	# Evita que los raycasts interpreten el golpe como una escalada.
+	onledge = false
 
 # ============================================================
 # Player Data

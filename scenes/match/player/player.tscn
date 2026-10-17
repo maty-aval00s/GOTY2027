@@ -6,6 +6,8 @@
 [ext_resource type="Script" uid="uid://cq7n4grapple1" path="res://player/grapple_hook.gd" id="4_hook"]
 [ext_resource type="Script" uid="uid://dgg78avaosu8g" path="res://player/slide_controller.gd" id="5_3v1qs"]
 [ext_resource type="Script" uid="uid://uae70pcek3qt" path="res://player/dash.gd" id="6_t0itt"]
+[ext_resource type="Script" uid="uid://hp7vgvnqmecp" path="res://player/bomb_controller.gd" id="7_v6p70"]
+[ext_resource type="PackedScene" uid="uid://duvu5trbhoj2q" path="res://scenes/match/player/bomb_projectile.tscn" id="8_sy86b"]
 
 [sub_resource type="Animation" id="Animation_ne2ju"]
 resource_name = "mixamo_com"
@@ -17477,6 +17479,10 @@ _data = {
 
 [node name="Player" type="CharacterBody3D" unique_id=1817994250]
 script = ExtResource("1_s3mhm")
+ground_acceleration = 200.0
+ground_deceleration = 200.0
+air_acceleration = 50.0
+air_drag = 1.0
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=165174125]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6179214, 0)
@@ -17595,5 +17601,15 @@ metadata/_custom_type_script = "uid://dgg78avaosu8g"
 [node name="Dash" type="Node" parent="." unique_id=1269636484]
 script = ExtResource("6_t0itt")
 speed = 100.0
+
+[node name="BombController" type="Node" parent="." unique_id=996806675]
+script = ExtResource("7_v6p70")
+projectile_scene = ExtResource("8_sy86b")
+launch_speed = 80.0
+cooldown = 1.0
+spawn_height = 3.0
+blast_radius = 50.0
+blast_force = 40.0
+falloff_exponent = 1.5
 
 [editable path="UAL2_Standard"]

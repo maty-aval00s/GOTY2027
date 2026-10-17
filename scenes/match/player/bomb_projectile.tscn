@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://duvu5trbhoj2q"]
+
+[ext_resource type="Script" uid="uid://vlb0v8kjpqhn" path="res://player/bomb_projectile.gd" id="1_mc3ht"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_bhunq"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_sn0t7"]
+
+[node name="BombProjectile" type="CharacterBody3D" unique_id=855775076]
+collision_layer = 0
+script = ExtResource("1_mc3ht")
+explosion_depth = 2.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=613723956]
+mesh = SubResource("SphereMesh_bhunq")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1569493036]
+shape = SubResource("SphereShape3D_sn0t7")
