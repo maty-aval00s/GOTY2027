@@ -3,16 +3,19 @@ extends Node
 signal it_changed(player_id: int, time_left: float)
 signal player_exploded(player_id: int)
 signal game_over(winner_id: int)
+signal life_lost(player_id:int)
 
 const START_TIME: float = 50.0
 const TAG_COOLDOWN: float = 1.0
 const SYNC_INTERVAL: float = 1.0
+const EXTRA_LIFE_TIME: float =25.0
 
 var it_player_id: int = -1
 var match_winner_id: int = -1
 var time_left: float = 0.0
 var game_active: bool = false
 var alive_player_ids: Array = []
+var extra_lives: Dictionary = {}
 
 var _tag_cooldown_timer: float = 0.0
 var _sync_accum: float = 0.0
@@ -43,6 +46,8 @@ func start_game() -> void:
 	alive_player_ids.clear()
 	for p: Statics.PlayerData in Game.instance.players:
 		alive_player_ids.append(p.id)
+		if p.role == Statics.Role.doble_vida:
+			extra_lives[p.id] = 1
 	_start_round()
 
 func _start_round() -> void:
@@ -70,6 +75,13 @@ func _try_tag(tagger_id: int, target_id: int) -> void:
 	_sync_it.rpc(it_player_id, time_left)  # no reinicia time_left
 
 func _explode(player_id: int) -> void:
+	if extra_lives.get(player_id, 0)>0:
+		extra_lives[player_id] -=1
+		time_left = EXTRA_LIFE_TIME
+		_on_life_lost.rpc(player_id)
+		_sync_it.rpc(it_player_id, time_left)
+		return
+		
 	_sync_game_active.rpc(false)
 	alive_player_ids.erase(player_id)
 	_on_explode.rpc(player_id)
@@ -135,3 +147,7 @@ func _on_game_over(winner_id: int) -> void:
 	match_winner_id = winner_id
 	game_active = false
 	game_over.emit(winner_id)
+	
+@rpc("authority", "call_local", "reliable")
+func _on_life_lost(player_id: int) -> void:
+	life_lost.emit(player_id)
