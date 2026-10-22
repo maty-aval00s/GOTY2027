@@ -42,12 +42,9 @@ extends CharacterBody3D
 
 @export var min_camera_distance: float = 3.2
 
-
 # ============================================================
 # Nodes
 # ============================================================
-
-
 
 @onready var camera_pivot: Node3D = $CameraPivot
 @onready var spring_arm: SpringArm3D = $CameraPivot/SpringArm3D
@@ -59,7 +56,6 @@ extends CharacterBody3D
 # Raycasts
 @onready var ray_01: RayCast3D = $Ray1
 @onready var ray_02: RayCast3D = $Ray2
-
 
 # Controllers
 @onready var grapple: GrappleHook = $GrappleHook
@@ -85,7 +81,6 @@ var _dash_hud: DashHud
 # animation controller.
 const SPRINT_SPEED_MULTIPLIER: float = 1.5
 
-
 # ============================================================
 # Camera & Interpolation state
 # ============================================================
@@ -98,7 +93,6 @@ var free_look_pitch: float = 0.0
 var camera_center_yaw: float = 0.0
 var camera_center_roll: float = 0.0
 
-
 # ============================================================
 # Network Targets
 # ============================================================
@@ -106,11 +100,9 @@ var camera_center_roll: float = 0.0
 var _target_position: Vector3 = Vector3.ZERO
 var _target_rotation: Vector3 = Vector3.ZERO
 
-
 # ============================================================
 # Remote state
 # ============================================================
-
 var _remote_is_on_floor: bool = true
 var _remote_was_on_floor: bool = true
 
@@ -126,11 +118,9 @@ var _remote_grapple_point: Vector3 = Vector3.ZERO
 var _remote_is_sliding: bool = false
 var _remote_was_sliding: bool = false
 
-
 # ============================================================
 # Player state
 # ============================================================
-
 var onledge: bool = false
 var air_jumps_left: int = 0
 
@@ -143,11 +133,9 @@ var podium_mode: bool = false
 var _player_name: String = ""
 var _tag_timer_label: Label
 
-
 # ============================================================
 # Initialization
 # ============================================================
-
 func _ready() -> void:
 	if podium_mode:
 		set_physics_process(false)
@@ -215,7 +203,6 @@ func setup(player_data: Statics.PlayerData) -> void:
 # ============================================================
 # Input
 # ============================================================
-
 func _input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():
 		return
@@ -226,34 +213,19 @@ func _input(event: InputEvent) -> void:
 	# --------------------------------------------------------
 	# Mouse movement
 	# --------------------------------------------------------
-
 	if event is InputEventMouseMotion:
-		var mouse_yaw: float = (
-			-event.relative.x
-			* mouse_sensitivity
-		)
+		var mouse_yaw: float = -event.relative.x * mouse_sensitivity
 
-		var mouse_pitch: float = (
-			-event.relative.y
-			* mouse_sensitivity
-		)
+		var mouse_pitch: float = -event.relative.y * mouse_sensitivity
 
 		var free_look_active: bool = \
 			Input.is_key_pressed(KEY_ALT)
 
 		if free_look_active:
-
-			# -------------------------------------------------
 			# ALT HELD
-			# -------------------------------------------------
-
 			free_look_yaw += mouse_yaw
 
-			free_look_yaw = wrapf(
-				free_look_yaw,
-				-PI,
-				PI
-			)
+			free_look_yaw = wrapf(free_look_yaw, -PI, PI)
 
 			var desired_pitch: float = (
 				base_camera_pitch
@@ -270,14 +242,9 @@ func _input(event: InputEvent) -> void:
 			free_look_pitch = (desired_pitch - base_camera_pitch)
 
 		else:
-			# -------------------------------------------------
 			# Normal third-person camera
-			# -------------------------------------------------
-
 			rotate_y(mouse_yaw)
-
 			base_camera_pitch += mouse_pitch
-
 			base_camera_pitch = clamp(
 				base_camera_pitch,
 				deg_to_rad(min_pitch),
@@ -286,16 +253,12 @@ func _input(event: InputEvent) -> void:
 
 		_apply_camera_rotation()
 
-
 # ============================================================
 # Visual Process
 # ============================================================
 
 func _process(delta: float) -> void:
-	# --------------------------------------------------------
 	# Remote Player Visual Interpolation
-	# --------------------------------------------------------
-
 	if not is_multiplayer_authority():
 		global_position = global_position.lerp(
 			_target_position,
@@ -469,7 +432,6 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	if climb.is_climbing:
-
 		if slide.active:
 			slide.stop()
 
@@ -478,21 +440,9 @@ func _physics_process(delta: float) -> void:
 			stop_slide_animation(false)
 
 		grapple.cancel()
-
 		velocity = Vector3.ZERO
-
-		_update_animation_state(
-			false,
-			is_on_floor(),
-			false,
-			false,
-			climb.is_climbing
-		)
-
-		_send_state(
-			false,
-			climb.is_climbing
-		)
+		_update_animation_state(false, is_on_floor(), false, false, climb.is_climbing)
+		_send_state(false, climb.is_climbing)
 
 		return
 
@@ -509,33 +459,16 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	if grapple.is_pulling():
-
 		if slide.active:
 			slide.stop()
-
 			# Grapple toma prioridad.
 			stop_slide_animation(false)
 
 		if grapple.advance_pull(self, delta):
 			move_and_slide()
-
-			var grapple_moving: bool = Vector2(
-				velocity.x,
-				velocity.z
-			).length() > 0.2
-
-			_update_animation_state(
-				grapple_moving,
-				is_on_floor(),
-				false,
-				false,
-				false
-			)
-
-			_send_state(
-				false,
-				false
-			)
+			var grapple_moving: bool = Vector2(velocity.x, velocity.z).length() > 0.2
+			_update_animation_state(grapple_moving, is_on_floor(), false, false, false)
+			_send_state(false, false)
 
 			return
 
@@ -549,19 +482,8 @@ func _physics_process(delta: float) -> void:
 			stop_slide_animation(false)
 
 		climb.start_climb(self, ledge_point)
-
-		_update_animation_state(
-			false,
-			is_on_floor(),
-			false,
-			false,
-			climb.is_climbing
-		)
-
-		_send_state(
-			false,
-			climb.is_climbing
-		)
+		_update_animation_state(false, is_on_floor(), false, false, climb.is_climbing)
+		_send_state(false, climb.is_climbing)
 		return
 
 	else:
@@ -571,7 +493,6 @@ func _physics_process(delta: float) -> void:
 			last_floor_y = global_position.y
 
 		if not is_on_floor():
-
 			if velocity.y < 0.0:
 				velocity += (
 					get_gravity()
@@ -595,7 +516,6 @@ func _physics_process(delta: float) -> void:
 		air_jumps_left = _max_air_jumps()
 
 	if Input.is_action_just_pressed("jump"):
-
 		if is_on_floor():
 			if slide.active:
 				slide.stop()
@@ -999,10 +919,7 @@ func receive_explosion_impulse(
 # Player Data
 # ============================================================
 
-func _on_player_data_updated(
-	id: int
-) -> void:
-
+func _on_player_data_updated(id: int) -> void:
 	if id != get_multiplayer_authority():
 		return
 
@@ -1027,30 +944,23 @@ func _on_player_data_updated(
 # ============================================================
 
 func _add_crosshair() -> void:
-
 	var layer: CanvasLayer = \
 		CanvasLayer.new()
-
 
 	layer.name = "Crosshair"
 	layer.layer = 20
 
-
 	var root: Control = \
 		Control.new()
-
 
 	root.set_anchors_and_offsets_preset(
 		Control.PRESET_FULL_RECT
 	)
 
-
 	root.mouse_filter = \
 		Control.MOUSE_FILTER_IGNORE
 
-
 	layer.add_child(root)
-
 
 	var color: Color = \
 		Color(
@@ -1059,7 +969,6 @@ func _add_crosshair() -> void:
 			1,
 			0.95
 		)
-
 
 	root.add_child(
 		_crosshair_bar(
@@ -1071,7 +980,6 @@ func _add_crosshair() -> void:
 		)
 	)
 
-
 	root.add_child(
 		_crosshair_bar(
 			color,
@@ -1082,18 +990,9 @@ func _add_crosshair() -> void:
 		)
 	)
 
-
 	add_child(layer)
 
-
-func _crosshair_bar(
-	color: Color,
-	left: float,
-	right: float,
-	top: float,
-	bottom: float
-) -> ColorRect:
-
+func _crosshair_bar(color: Color, left: float, right: float, top: float, bottom: float) -> ColorRect:
 	var bar: ColorRect = \
 		ColorRect.new()
 
@@ -1118,7 +1017,6 @@ func _crosshair_bar(
 # ============================================================
 
 func _add_tag_hud() -> void:
-
 	var layer: CanvasLayer = \
 		CanvasLayer.new()
 
@@ -1146,7 +1044,6 @@ func _add_tag_hud() -> void:
 # ============================================================
 
 func _on_tag_zone_body_entered(body: Node3D) -> void:
-
 	if not is_multiplayer_authority():
 		return
 

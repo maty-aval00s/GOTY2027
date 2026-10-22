@@ -84,9 +84,14 @@ uv1_world_triplanar = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4bynt"]
 albedo_texture = ExtResource("9_ff32x")
+emission_enabled = true
+emission = Color(0.54268765, 0, 0, 1)
+emission_energy_multiplier = 8.91
+backlight = Color(1, 0.7372549, 0, 1)
 uv1_scale = Vector3(0.1, 0.1, 0.1)
 uv1_triplanar = true
 uv1_world_triplanar = true
+disable_receive_shadows = true
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_bhunq"]
 
