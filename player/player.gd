@@ -21,9 +21,6 @@ extends CharacterBody3D
 
 @export var double_jump_speed: float = 13.0
 
-@export var climb_forward_offset: float = -0.9
-@export var climb_up_offset: float = 0.3
-
 @export var gravity_multiplier: float = 3.0
 @export var fall_gravity_multiplier: float = 4.5
 
@@ -69,6 +66,7 @@ extends CharacterBody3D
 @onready var slide: SlideController = $SlideController
 @onready var dash: DashController = $Dash
 @onready var bomb: BombController = $BombController
+@onready var climb: ClimbController = $ClimbController
 
 
 @onready var tag_zone: Area3D = $TagZone
@@ -134,11 +132,9 @@ var _remote_was_sliding: bool = false
 # ============================================================
 
 var onledge: bool = false
-var is_climbing: bool = false
 var air_jumps_left: int = 0
 
 var last_floor_y: float = 0.0
-var climb_cooldown: float = 0.0
 
 var role: Statics.Role = Statics.Role.NONE
 
@@ -201,6 +197,9 @@ func _ready() -> void:
 	TagGame.player_exploded.connect(
 		_on_player_exploded
 	)
+	
+	# event handlers
+	climb.climb_started.connect(_on_climb_started)
 
 func _add_dash_hud() -> void:
 	_dash_hud = DASH_HUD_SCENE.instantiate()
@@ -217,7 +216,6 @@ func _add_dash_hud() -> void:
 		if id == get_multiplayer_authority():
 			Debug.log("¡Usaste tu vida extra!", 4.0)
 	)
-
 
 func setup(player_data: Statics.PlayerData) -> void:
 	_player_name = player_data.name
@@ -251,7 +249,6 @@ func setup(player_data: Statics.PlayerData) -> void:
 			"Rol: %s" % Statics.get_role_name(role),
 			6.0
 		)
-
 
 # ============================================================
 # Input
@@ -440,7 +437,6 @@ func _process(delta: float) -> void:
 	_apply_camera_rotation()
 	#_keep_camera_back()
 
-
 func _keep_camera_back() -> void:
 	var cam_pos: Vector3 = camera_3d.position
 
@@ -452,14 +448,12 @@ func _keep_camera_back() -> void:
 	cam_pos.z = min_camera_distance
 	camera_3d.position = cam_pos
 
-
 func _apply_camera_rotation() -> void:
 	camera_pivot.rotation = Vector3(
 		base_camera_pitch + free_look_pitch,
 		camera_center_yaw + free_look_yaw,
 		camera_center_roll
 	)
-
 
 # ============================================================
 # Physics
@@ -561,7 +555,7 @@ func _physics_process(delta: float) -> void:
 	# Climbing
 	# --------------------------------------------------------
 
-	if is_climbing:
+	if climb.is_climbing:
 
 		if slide.active:
 			slide.stop()
@@ -581,13 +575,13 @@ func _physics_process(delta: float) -> void:
 			is_on_floor(),
 			false,
 			false,
-			is_climbing
+			climb.is_climbing
 		)
 
 
 		_send_state(
 			false,
-			is_climbing
+			climb.is_climbing
 		)
 
 
@@ -652,7 +646,7 @@ func _physics_process(delta: float) -> void:
 
 	if (
 		onledge
-		and climb_cooldown <= 0.0
+		and climb.cooldown_left <= 0.0
 	):
 
 		if slide.active:
@@ -660,7 +654,7 @@ func _physics_process(delta: float) -> void:
 			stop_slide_animation(false)
 
 
-		start_climb()
+		climb.start_climb(self, ledge_point)
 
 
 		_update_animation_state(
@@ -668,13 +662,13 @@ func _physics_process(delta: float) -> void:
 			is_on_floor(),
 			false,
 			false,
-			is_climbing
+			climb.is_climbing
 		)
 
 
 		_send_state(
 			false,
-			is_climbing
+			climb.is_climbing
 		)
 
 
@@ -683,8 +677,8 @@ func _physics_process(delta: float) -> void:
 
 	else:
 
-		climb_cooldown = maxf(
-			climb_cooldown - delta,
+		climb.cooldown_left = maxf(
+			climb.cooldown_left - delta,
 			0.0
 		)
 
@@ -994,13 +988,11 @@ func _physics_process(delta: float) -> void:
 		onledge
 	)
 
-
 # ============================================================
 # Ledge / Obstacle Detection
 # ============================================================
 
 var ledge_point: Vector3 = Vector3.ZERO
-
 
 func raycast_detect_ledge() -> bool:
 
@@ -1016,62 +1008,6 @@ func raycast_detect_ledge() -> bool:
 
 
 	return onledge
-
-
-# ============================================================
-# Climb
-# ============================================================
-
-func start_climb() -> void:
-	is_climbing = true
-
-
-	var forward: Vector3 = (
-		global_transform.basis
-		* Vector3(
-			0,
-			0,
-			climb_forward_offset
-		)
-	)
-
-
-	var target_pos: Vector3 = Vector3(
-		global_position.x + forward.x,
-		ledge_point.y + climb_up_offset,
-		global_position.z + forward.z
-	)
-
-
-	var climb_duration: float = 0.5
-
-	animations.play_climb(climb_duration)
-
-
-	var tween: Tween = create_tween()
-
-
-	tween.tween_property(
-		self,
-		"global_position",
-		target_pos,
-		climb_duration
-	)
-
-
-	tween.finished.connect(
-		_on_climb_finished
-	)
-
-
-func _on_climb_finished() -> void:
-	is_climbing = false
-
-	velocity = Vector3.ZERO
-
-	move_and_slide()
-
-	climb_cooldown = 0.5
 
 
 # ============================================================
@@ -1136,6 +1072,13 @@ func test() -> void:
 		10
 	)
 
+# climbing
+
+func _on_climb_started(
+	duration: float
+) -> void:
+	animations.play_climb(duration)
+
 
 # ============================================================
 # Extra Speed (Role)
@@ -1158,32 +1101,22 @@ func _max_air_jumps() -> int:
 # ============================================================
 
 func _handle_grapple_input() -> void:
-
-	if not Input.is_action_just_pressed(
-		"grapple"
-	):
+	if not Input.is_action_just_pressed("grapple"):
 		return
 
-
-	if (
-		role != Statics.Role.gancho
-		and not grapple.is_pulling()
-	):
-
+	if (role != Statics.Role.gancho and not grapple.is_pulling()):
 		Debug.log(
 			"Rol: %s. El gancho es solo de gancho."
 			% Statics.get_role_name(role)
 		)
-
 		return
-
 
 	if grapple.is_pulling():
 		grapple.cancel()
 		return
 
 
-	if is_climbing:
+	if climb.is_climbing:
 		return
 
 

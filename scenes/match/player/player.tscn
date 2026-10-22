@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://hp7vgvnqmecp" path="res://player/bomb_controller.gd" id="7_v6p70"]
 [ext_resource type="PackedScene" uid="uid://duvu5trbhoj2q" path="res://scenes/match/player/bomb_projectile.tscn" id="8_sy86b"]
 [ext_resource type="Script" uid="uid://b4h2s7cam4i0l" path="res://player/player_animations.gd" id="9_omcdu"]
+[ext_resource type="Script" uid="uid://bkj4feqlqq337" path="res://player/climb_controller.gd" id="10_q5dri"]
 
 [sub_resource type="Animation" id="Animation_ne2ju"]
 resource_name = "mixamo_com"
@@ -17480,25 +17481,10 @@ _data = {
 
 [node name="Player" type="CharacterBody3D" unique_id=1817994250]
 script = ExtResource("1_s3mhm")
-max_move_speed = null
-rapido_speed_multiplier = null
-move_speed = null
-jump_speed = null
 ground_acceleration = 200.0
 ground_deceleration = 200.0
 air_acceleration = 50.0
 air_drag = 1.0
-double_jump_speed = null
-climb_forward_offset = null
-climb_up_offset = null
-gravity_multiplier = null
-fall_gravity_multiplier = null
-position_interpolate_speed = null
-mouse_sensitivity = null
-min_pitch = null
-max_pitch = null
-free_look_recenter_speed = null
-min_camera_distance = null
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=165174125]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6179214, 0)
@@ -17630,5 +17616,8 @@ falloff_exponent = 1.5
 
 [node name="PlayerAnimations" type="Node" parent="." unique_id=1489807843]
 script = ExtResource("9_omcdu")
+
+[node name="ClimbController" type="Node" parent="." unique_id=516365429]
+script = ExtResource("10_q5dri")
 
 [editable path="UAL2_Standard"]
