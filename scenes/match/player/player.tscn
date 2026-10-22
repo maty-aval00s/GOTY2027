@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://uae70pcek3qt" path="res://player/dash.gd" id="6_t0itt"]
 [ext_resource type="Script" uid="uid://hp7vgvnqmecp" path="res://player/bomb_controller.gd" id="7_v6p70"]
 [ext_resource type="PackedScene" uid="uid://duvu5trbhoj2q" path="res://scenes/match/player/bomb_projectile.tscn" id="8_sy86b"]
+[ext_resource type="Script" uid="uid://b4h2s7cam4i0l" path="res://player/player_animations.gd" id="9_omcdu"]
 
 [sub_resource type="Animation" id="Animation_ne2ju"]
 resource_name = "mixamo_com"
@@ -17479,10 +17480,25 @@ _data = {
 
 [node name="Player" type="CharacterBody3D" unique_id=1817994250]
 script = ExtResource("1_s3mhm")
+max_move_speed = null
+rapido_speed_multiplier = null
+move_speed = null
+jump_speed = null
 ground_acceleration = 200.0
 ground_deceleration = 200.0
 air_acceleration = 50.0
 air_drag = 1.0
+double_jump_speed = null
+climb_forward_offset = null
+climb_up_offset = null
+gravity_multiplier = null
+fall_gravity_multiplier = null
+position_interpolate_speed = null
+mouse_sensitivity = null
+min_pitch = null
+max_pitch = null
+free_look_recenter_speed = null
+min_camera_distance = null
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=165174125]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6179214, 0)
@@ -17496,7 +17512,7 @@ margin = 0.25
 transform = Transform3D(1, 0, 0, 0, 0.99994516, -0.010471784, 0, 0.010471784, 0.99994516, 0, 0.2677858, 3.3990493)
 
 [node name="UAL2_Standard" parent="." unique_id=190529878 instance=ExtResource("2_qqgw4")]
-transform = Transform3D(-0.9979156, -0.016702203, -0.062333487, 0, 0.9659255, -0.25881904, 0.06453238, -0.25827947, -0.9639125, 0, 0.3, 0)
+transform = Transform3D(-0.9979156, -0.016702203, -0.062333487, 0, 0.96592546, -0.25881904, 0.06453238, -0.25827947, -0.9639125, 0, 0.3, 0)
 
 [node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 85218198) index="0" unique_id=2121876374]
 bones/1/position = Vector3(0.052163642, 0.6139999, -0.08217772)
@@ -17611,5 +17627,8 @@ spawn_height = 3.0
 blast_radius = 50.0
 blast_force = 40.0
 falloff_exponent = 1.5
+
+[node name="PlayerAnimations" type="Node" parent="." unique_id=1489807843]
+script = ExtResource("9_omcdu")
 
 [editable path="UAL2_Standard"]

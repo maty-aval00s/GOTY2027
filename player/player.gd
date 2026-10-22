@@ -59,21 +59,6 @@ extends CharacterBody3D
 
 @onready var label_3d: Label3D = $Label3D
 
-# Idle / Sprint / Jump
-@onready var anim_player: AnimationPlayer = \
-	$UAL2_Standard/AnimationPlayer2
-
-
-# SprintAnimation adicional
-@onready var animation_player: AnimationPlayer = \
-	$UAL2_Standard/AnimationPlayer3
-
-
-# Climb + Slide
-@onready var climb_anim_player: AnimationPlayer = \
-	$UAL2_Standard/AnimationPlayer
-
-
 # Raycasts
 @onready var ray_01: RayCast3D = $Ray1
 @onready var ray_02: RayCast3D = $Ray2
@@ -87,6 +72,8 @@ extends CharacterBody3D
 
 
 @onready var tag_zone: Area3D = $TagZone
+@onready var animations: PlayerAnimations = \
+	$PlayerAnimations
 
 # ===================
 # hud
@@ -96,49 +83,9 @@ const DASH_HUD_SCENE := preload(
 )
 var _dash_hud: DashHud
 
-# ============================================================
-# Animations
-# ============================================================
-
-const ANIM_IDLE: StringName = \
-	&"UAL1_Standard_RM/Idle"
-
-const ANIM_SPRINT: StringName = \
-	&"UAL1_Standard_RM/Sprint"
-
-const ANIM_JUMP_START: StringName = \
-	&"UAL1_Standard_RM/Jump_Start"
-
-const ANIM_JUMP_LOOP: StringName = \
-	&"UAL1_Standard_RM/Jump"
-
-const ANIM_JUMP_LAND: StringName = \
-	&"UAL1_Standard_RM/Jump_Land"
-
-const ANIM_CLIMB: StringName = \
-	&"ClimbUp_1m"
-
-const ANIM_DANCE: StringName = \
-	&"UAL1_Standard_RM/Dance"
-
-const ANIM_DEATH: StringName = \
-	&"UAL1_Standard_RM/Death01"
-
-
-# ------------------------------------------------------------
-# Slide animations
-# Estas están en:
-# $UAL2_Standard/AnimationPlayer
-# ------------------------------------------------------------
-
-const ANIM_SLIDE_START: StringName = &"Slide_Start"
-const ANIM_SLIDE: StringName = &"Slide"
-const ANIM_SLIDE_EXIT: StringName = &"Slide_Exit"
-
-
-const LAND_ANIMATION_SPEED: float = 2.0
+# This changes movement speed, so it stays in Player instead of the
+# animation controller.
 const SPRINT_SPEED_MULTIPLIER: float = 1.5
-const ANIM_CLIMB_DURATION: float = 0.6
 
 
 # ============================================================
@@ -201,11 +148,6 @@ var _player_name: String = ""
 var _tag_timer_label: Label
 
 
-# True mientras se está reproduciendo Slide_Exit.
-# Evita que Idle/Sprint pisen esa animación.
-var _slide_exit_playing: bool = false
-
-
 # ============================================================
 # Initialization
 # ============================================================
@@ -237,18 +179,6 @@ func _ready() -> void:
 		)
 
 	spring_arm.add_excluded_object(get_rid())
-
-	climb_anim_player.callback_mode_process = \
-		AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
-
-
-	# Escuchamos cuando terminan Slide_Start y Slide_Exit.
-	if not climb_anim_player.animation_finished.is_connected(
-		_on_action_animation_finished
-	):
-		climb_anim_player.animation_finished.connect(
-			_on_action_animation_finished
-		)
 
 
 	_prev_position = global_position
@@ -283,10 +213,11 @@ func _add_dash_hud() -> void:
 		role == Statics.Role.rapido
 	)
 
-	TagGame.life_lost.connect(func(id:int)-> void:
+	TagGame.life_lost.connect(func(id: int) -> void:
 		if id == get_multiplayer_authority():
 			Debug.log("¡Usaste tu vida extra!", 4.0)
-		)
+	)
+
 
 func setup(player_data: Statics.PlayerData) -> void:
 	_player_name = player_data.name
@@ -783,10 +714,6 @@ func _physics_process(delta: float) -> void:
 	# Jump
 	# --------------------------------------------------------
 
-	# --------------------------------------------------------
-# Jump
-# --------------------------------------------------------
-
 	if is_on_floor():
 		air_jumps_left = _max_air_jumps()
 
@@ -931,9 +858,10 @@ func _physics_process(delta: float) -> void:
 		)
 
 	else:
-		move_speed = (max_move_speed
-				* _role_speed_multiplier()
-				)
+		move_speed = (
+			max_move_speed
+			* _role_speed_multiplier()
+		)
 
 
 	# --------------------------------------------------------
@@ -1098,10 +1026,6 @@ func start_climb() -> void:
 	is_climbing = true
 
 
-	# Cualquier Slide_Exit pendiente deja de tener prioridad.
-	_slide_exit_playing = false
-
-
 	var forward: Vector3 = (
 		global_transform.basis
 		* Vector3(
@@ -1121,18 +1045,7 @@ func start_climb() -> void:
 
 	var climb_duration: float = 0.5
 
-
-	var playback_speed: float = (
-		ANIM_CLIMB_DURATION
-		/ climb_duration
-	)
-
-
-	climb_anim_player.play(
-		ANIM_CLIMB,
-		-1.0,
-		playback_speed
-	)
+	animations.play_climb(climb_duration)
 
 
 	var tween: Tween = create_tween()
@@ -1162,152 +1075,30 @@ func _on_climb_finished() -> void:
 
 
 # ============================================================
-# Slide Animations
+# Animation adapters
+#
+# These wrappers preserve Player's existing call sites. The animation
+# decisions and AnimationPlayer references live in PlayerAnimations.
 # ============================================================
 
 func start_slide_animation() -> void:
-
-	_slide_exit_playing = false
-
-
-	# Paramos las animaciones normales para que no
-	# pisen el slide.
-	anim_player.stop()
-	animation_player.stop()
-
-
-	climb_anim_player.play(
-		ANIM_SLIDE_START
-	)
+	animations.start_slide_animation()
 
 
 func stop_slide_animation(
 	play_exit: bool = true
 ) -> void:
+	animations.stop_slide_animation(play_exit)
 
-	if not play_exit:
-
-		_slide_exit_playing = false
-
-
-		if (
-			climb_anim_player.current_animation
-			== ANIM_SLIDE_START
-			or
-			climb_anim_player.current_animation
-			== ANIM_SLIDE
-			or
-			climb_anim_player.current_animation
-			== ANIM_SLIDE_EXIT
-		):
-			climb_anim_player.stop()
-
-
-		return
-
-
-	# Si ya está haciendo Slide_Exit,
-	# no lo reiniciamos.
-	if (
-		climb_anim_player.current_animation
-		== ANIM_SLIDE_EXIT
-	):
-
-		_slide_exit_playing = true
-		return
-
-
-	if (
-		climb_anim_player.current_animation
-		== ANIM_SLIDE_START
-		or
-		climb_anim_player.current_animation
-		== ANIM_SLIDE
-	):
-
-		_slide_exit_playing = true
-
-
-		climb_anim_player.play(
-			ANIM_SLIDE_EXIT
-		)
-
-
-func _on_action_animation_finished(
-	anim_name: StringName
-) -> void:
-
-	# --------------------------------------------------------
-	# Slide_Start terminó -> Slide loop
-	# --------------------------------------------------------
-
-	if anim_name == ANIM_SLIDE_START:
-
-		var should_continue_slide: bool
-
-
-		if is_multiplayer_authority():
-			should_continue_slide = slide.active
-
-		else:
-			should_continue_slide = _remote_is_sliding
-
-
-		if should_continue_slide:
-
-			climb_anim_player.play(
-				ANIM_SLIDE
-			)
-
-
-		return
-
-
-	# --------------------------------------------------------
-	# Slide_Exit terminó
-	# --------------------------------------------------------
-
-	if anim_name == ANIM_SLIDE_EXIT:
-
-		_slide_exit_playing = false
-
-		return
-
-
-# ============================================================
-# Animation state
-# ============================================================
 
 func update_animations(
 	is_sprinting: bool
 ) -> void:
-
-	# SprintAnimation no debe interferir
-	# con Slide ni Slide_Exit.
-	if (
+	animations.update_animations(
+		is_sprinting,
+		velocity,
 		slide.active
-		or _slide_exit_playing
-	):
-		animation_player.stop()
-		return
-
-
-	var is_moving: bool = Vector2(
-		velocity.x,
-		velocity.z
-	).length() > 0.2
-
-
-	if (
-		is_sprinting
-		and is_moving
-	):
-		animation_player.play(
-			"SprintAnimation"
-		)
-
-	else:
-		animation_player.stop()
+	)
 
 
 func _update_animation_state(
@@ -1317,165 +1108,21 @@ func _update_animation_state(
 	just_landed: bool,
 	on_ledge: bool = false
 ) -> void:
-
-	# --------------------------------------------------------
-	# 1. Climbing
-	# --------------------------------------------------------
-
-	if on_ledge:
-
-		_slide_exit_playing = false
-
-
-		anim_player.stop()
-		animation_player.stop()
+	animations.update_animation_state(
+		moving,
+		on_floor,
+		just_jumped,
+		just_landed,
+		on_ledge,
+		_visual_slide_active()
+	)
 
 
-		if (
-			climb_anim_player.current_animation
-			!= ANIM_CLIMB
-			or not climb_anim_player.is_playing()
-		):
-
-			climb_anim_player.play(
-				ANIM_CLIMB
-			)
-
-
-		return
-
-
-	# --------------------------------------------------------
-	# Slide
-	# --------------------------------------------------------
-
-	var visual_slide_active: bool
-
-
+func _visual_slide_active() -> bool:
 	if is_multiplayer_authority():
-		visual_slide_active = slide.active
+		return slide.active
 
-	else:
-		visual_slide_active = _remote_is_sliding
-
-
-	if (
-		visual_slide_active
-		or _slide_exit_playing
-	):
-
-		anim_player.stop()
-		animation_player.stop()
-
-		return
-
-
-	# --------------------------------------------------------
-	# 2. Landing
-	# --------------------------------------------------------
-
-	if just_landed:
-
-		if moving:
-			play_anim(
-				ANIM_SPRINT
-			)
-
-		else:
-			play_anim(
-				ANIM_JUMP_LAND,
-				LAND_ANIMATION_SPEED
-			)
-
-
-		return
-
-
-	# --------------------------------------------------------
-	# 3. Jump start
-	# --------------------------------------------------------
-
-	if just_jumped:
-		anim_player.stop()
-		play_anim(
-			ANIM_JUMP_START
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# 4. Airborne
-	# --------------------------------------------------------
-
-	if not on_floor:
-
-		if (
-			anim_player.current_animation
-			== ANIM_JUMP_START
-			and anim_player.is_playing()
-		):
-			return
-
-
-		play_anim(
-			ANIM_JUMP_LOOP
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# 5. Ground movement
-	# --------------------------------------------------------
-
-	if moving:
-
-		play_anim(
-			ANIM_SPRINT
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# 6. Finish landing transition
-	# --------------------------------------------------------
-
-	if (
-		anim_player.current_animation
-		== ANIM_JUMP_LAND
-		and anim_player.is_playing()
-	):
-		return
-
-
-	# --------------------------------------------------------
-	# 7. Idle
-	# --------------------------------------------------------
-
-	play_anim(
-		ANIM_IDLE
-	)
-
-
-func play_anim(
-	animation: StringName,
-	speed: float = 1.0
-) -> void:
-
-	if (
-		anim_player.current_animation
-		== animation
-	):
-		return
-
-
-	anim_player.play(
-		animation,
-		-1.0,
-		speed
-	)
+	return _remote_is_sliding
 
 
 # ============================================================
@@ -1489,18 +1136,22 @@ func test() -> void:
 		10
 	)
 
+
 # ============================================================
 # Extra Speed (Role)
 # ============================================================
+
 func _role_speed_multiplier() -> float:
 	return rapido_speed_multiplier if role == Statics.Role.rapido else 1.0
-	
+
 
 # ============================================================
-# Double Jump 
+# Double Jump
 # ============================================================
+
 func _max_air_jumps() -> int:
 	return 1 if role == Statics.Role.doble_salto else 0
+
 
 # ============================================================
 # Grapple
@@ -2076,16 +1727,4 @@ func present_on_podium(player_name: String, is_winner: bool) -> void:
 	label_3d.modulate = Color(1.0, 0.86, 0.35) if is_winner else Color(0.78, 0.8, 0.84)
 	label_3d.font_size = 48
 
-	climb_anim_player.stop()
-	animation_player.stop()
-	anim_player.play(ANIM_DANCE if is_winner else ANIM_DEATH)
-
-	if not is_winner and not anim_player.animation_finished.is_connected(_hold_defeat_pose):
-		anim_player.animation_finished.connect(_hold_defeat_pose)
-
-
-func _hold_defeat_pose(anim_name: StringName) -> void:
-	if anim_name != ANIM_DEATH:
-		return
-	anim_player.seek(anim_player.current_animation_length, true)
-	anim_player.pause()
+	animations.play_podium(is_winner)
