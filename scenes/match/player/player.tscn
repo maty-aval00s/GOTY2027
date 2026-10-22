@@ -17496,7 +17496,7 @@ margin = 0.25
 transform = Transform3D(1, 0, 0, 0, 0.99994516, -0.010471784, 0, 0.010471784, 0.99994516, 0, 0.2677858, 3.3990493)
 
 [node name="UAL2_Standard" parent="." unique_id=190529878 instance=ExtResource("2_qqgw4")]
-transform = Transform3D(-0.9979156, -0.016702205, -0.062333487, 0, 0.9659256, -0.25881904, 0.06453238, -0.2582795, -0.9639125, 0, 0.3, 0)
+transform = Transform3D(-0.9979156, -0.016702203, -0.062333487, 0, 0.9659255, -0.25881904, 0.06453238, -0.25827947, -0.9639125, 0, 0.3, 0)
 
 [node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 85218198) index="0" unique_id=2121876374]
 bones/1/position = Vector3(0.052163642, 0.6139999, -0.08217772)

@@ -12,6 +12,7 @@ enum Role {
 	gancho,
 	rapido,
 	doble_vida,
+	doble_salto,
 }
 
 
@@ -25,6 +26,8 @@ static func get_role_name(role: Role) -> String:
 			return "rapido"
 		Role.doble_vida:
 			return "doble vida"
+		Role.doble_salto:
+			return "doble salto"
 	return "Unknown"
 
 

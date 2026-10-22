@@ -7,6 +7,7 @@ extends CharacterBody3D
 # ============================================================
 
 @export var max_move_speed: float = 14.0
+@export var rapido_speed_multiplier: float = 1.25
 @export var move_speed: float = 14.0
 @export var jump_speed: float = 15.0
 
@@ -17,6 +18,8 @@ extends CharacterBody3D
 # Air movement adds steering acceleration without deleting momentum.
 @export var air_acceleration: float = 24.0
 @export var air_drag: float = 0.20
+
+@export var double_jump_speed: float = 13.0
 
 @export var climb_forward_offset: float = -0.9
 @export var climb_up_offset: float = 0.3
@@ -185,6 +188,7 @@ var _remote_was_sliding: bool = false
 
 var onledge: bool = false
 var is_climbing: bool = false
+var air_jumps_left: int = 0
 
 var last_floor_y: float = 0.0
 var climb_cooldown: float = 0.0
@@ -279,6 +283,10 @@ func _add_dash_hud() -> void:
 		role == Statics.Role.rapido
 	)
 
+	TagGame.life_lost.connect(func(id:int)-> void:
+		if id == get_multiplayer_authority():
+			Debug.log("¡Usaste tu vida extra!", 4.0)
+		)
 
 func setup(player_data: Statics.PlayerData) -> void:
 	_player_name = player_data.name
@@ -775,21 +783,27 @@ func _physics_process(delta: float) -> void:
 	# Jump
 	# --------------------------------------------------------
 
-	if (
-		is_on_floor()
-		and Input.is_action_just_pressed("jump")
-	):
+	# --------------------------------------------------------
+# Jump
+# --------------------------------------------------------
 
-		# Saltar cancela el slide.
-		if slide.active:
-			slide.stop()
+	if is_on_floor():
+		air_jumps_left = _max_air_jumps()
 
-			# Dejamos que Jump_Start tome prioridad.
-			stop_slide_animation(false)
+	if Input.is_action_just_pressed("jump"):
 
+		if is_on_floor():
+			if slide.active:
+				slide.stop()
+				stop_slide_animation(false)
 
-		velocity.y = jump_speed
-		just_jumped = true
+			velocity.y = jump_speed
+			just_jumped = true
+
+		elif air_jumps_left > 0:
+			air_jumps_left -= 1
+			velocity.y = double_jump_speed
+			just_jumped = true
 
 
 	# --------------------------------------------------------
@@ -913,10 +927,13 @@ func _physics_process(delta: float) -> void:
 		move_speed = (
 			max_move_speed
 			* SPRINT_SPEED_MULTIPLIER
+			* _role_speed_multiplier()
 		)
 
 	else:
-		move_speed = max_move_speed
+		move_speed = (max_move_speed
+				* _role_speed_multiplier()
+				)
 
 
 	# --------------------------------------------------------
@@ -1379,7 +1396,7 @@ func _update_animation_state(
 	# --------------------------------------------------------
 
 	if just_jumped:
-
+		anim_player.stop()
 		play_anim(
 			ANIM_JUMP_START
 		)
@@ -1472,6 +1489,18 @@ func test() -> void:
 		10
 	)
 
+# ============================================================
+# Extra Speed (Role)
+# ============================================================
+func _role_speed_multiplier() -> float:
+	return rapido_speed_multiplier if role == Statics.Role.rapido else 1.0
+	
+
+# ============================================================
+# Double Jump 
+# ============================================================
+func _max_air_jumps() -> int:
+	return 1 if role == Statics.Role.doble_salto else 0
 
 # ============================================================
 # Grapple
