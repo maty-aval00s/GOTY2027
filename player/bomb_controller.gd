@@ -2,20 +2,6 @@ class_name BombController
 extends Node
 
 
-signal bomb_launched(
-	origin: Vector3,
-	initial_velocity: Vector3
-)
-
-signal bomb_exploded(
-	center: Vector3,
-	radius: float,
-	force: float,
-	falloff_exponent: float,
-	player_center_height: float
-)
-
-
 @export var projectile_scene: PackedScene
 
 @export var launch_speed: float = 27.0
@@ -49,18 +35,16 @@ func try_launch(
 	camera: Camera3D,
 	body: CharacterBody3D
 ) -> bool:
-
 	if role != Statics.Role.doble_vida:
 		return false
 
 	if is_on_cooldown():
 		return false
 
-	if projectile_scene == null or camera == null:
+	if projectile_scene == null or camera == null or body == null:
 		return false
 
 	var direction: Vector3 = -camera.global_basis.z
-
 	if direction.length_squared() < 0.0001:
 		return false
 
@@ -77,16 +61,19 @@ func try_launch(
 		+ body.velocity * 0.25
 	)
 
-	_spawn_projectile(
+	# El dueño crea su proyectil local y es el único que informa el impacto.
+	if not _spawn_projectile(
 		origin,
 		initial_velocity,
 		body,
 		true
-	)
+	):
+		return false
 
 	_cooldown_left = cooldown
 
-	bomb_launched.emit(
+	# El resto de peers crea la representación visual/física remota.
+	_spawn_bomb_on_peers.rpc(
 		origin,
 		initial_velocity
 	)
@@ -94,34 +81,29 @@ func try_launch(
 	return true
 
 
-func spawn_remote(
-	origin: Vector3,
-	initial_velocity: Vector3,
-	owner_body: CharacterBody3D
-) -> void:
-
-	_spawn_projectile(
-		origin,
-		initial_velocity,
-		owner_body,
-		false
-	)
-
-
 func _spawn_projectile(
 	origin: Vector3,
 	initial_velocity: Vector3,
 	owner_body: CharacterBody3D,
 	report_explosion: bool
-) -> void:
+) -> bool:
+	if projectile_scene == null or owner_body == null:
+		return false
+
+	var scene_root: Node = get_tree().current_scene
+	if scene_root == null:
+		push_error("BombController: no hay una escena actual para agregar el proyectil.")
+		return false
 
 	var projectile: BombProjectile = (
 		projectile_scene.instantiate()
 		as BombProjectile
 	)
+	if projectile == null:
+		push_error("BombController: projectile_scene no instancia un BombProjectile.")
+		return false
 
-	get_tree().current_scene.add_child(projectile)
-
+	scene_root.add_child(projectile)
 	projectile.global_position = origin
 
 	if report_explosion:
@@ -134,15 +116,59 @@ func _spawn_projectile(
 		owner_body
 	)
 
+	return true
+
+
+@rpc("authority", "call_remote", "reliable")
+func _spawn_bomb_on_peers(
+	origin: Vector3,
+	initial_velocity: Vector3
+) -> void:
+	var owner_body: CharacterBody3D = get_parent() as CharacterBody3D
+	if owner_body == null:
+		push_error("BombController debe ser hijo de un CharacterBody3D.")
+		return
+
+	_spawn_projectile(
+		origin,
+		initial_velocity,
+		owner_body,
+		false
+	)
+
 
 func _on_projectile_impacted(
-	point: Vector3
+	explosion_center: Vector3
 ) -> void:
+	if not is_multiplayer_authority():
+		return
 
-	bomb_exploded.emit(
-		point,
+	_apply_explosion_on_peers.rpc(
+		explosion_center,
 		blast_radius,
 		blast_force,
 		falloff_exponent,
 		player_center_height
 	)
+
+
+@rpc("authority", "call_local", "reliable")
+func _apply_explosion_on_peers(
+	explosion_center: Vector3,
+	radius: float,
+	force: float,
+	exponent: float,
+	center_height: float
+) -> void:
+	for node: Node in get_tree().get_nodes_in_group("players"):
+		var player: Player = node as Player
+		if player == null or not player.is_multiplayer_authority():
+			continue
+
+		player.receive_explosion_impulse(
+			explosion_center,
+			radius,
+			force,
+			exponent,
+			center_height
+		)

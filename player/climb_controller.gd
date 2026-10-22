@@ -24,11 +24,11 @@ func start_climb(body: CharacterBody3D, ledge_point: Vector3) -> void:
 	climb_started.emit(duration)
 	var tween: Tween = create_tween()
 
-	tween.tween_property(self, "global_position", target_pos, duration)
-	tween.finished.connect(_on_climb_finished)
+	tween.tween_property(body, "global_position", target_pos, duration)
+	tween.finished.connect(_on_climb_finished.bind(body))
 
 
-func _on_climb_finished(body: CharacterBody3D, ledge_point: Vector3) -> void:
+func _on_climb_finished(body: CharacterBody3D) -> void:
 	is_climbing = false
 	cooldown_left = cooldown
 

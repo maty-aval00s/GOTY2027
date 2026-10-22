@@ -160,57 +160,29 @@ func _ready() -> void:
 
 	add_to_group("players")
 
-	if not bomb.bomb_launched.is_connected(
-		_on_bomb_launched
-	):
-		bomb.bomb_launched.connect(
-			_on_bomb_launched
-		)
-
-	if not bomb.bomb_exploded.is_connected(
-		_on_bomb_exploded
-	):
-		bomb.bomb_exploded.connect(
-			_on_bomb_exploded
-		)
-
 	spring_arm.add_excluded_object(get_rid())
-
 
 	_prev_position = global_position
 	_target_position = global_position
 	_target_rotation = global_rotation
 
-
 	base_camera_pitch = camera_pivot.rotation.x
 	camera_center_yaw = camera_pivot.rotation.y
 	camera_center_roll = camera_pivot.rotation.z
 
-
 	_apply_camera_rotation()
 
-
-	tag_zone.body_entered.connect(
-		_on_tag_zone_body_entered
-	)
-
-	TagGame.player_exploded.connect(
-		_on_player_exploded
-	)
+	tag_zone.body_entered.connect(_on_tag_zone_body_entered)
+	TagGame.player_exploded.connect(_on_player_exploded)
 	
 	# event handlers
 	climb.climb_started.connect(_on_climb_started)
 
 func _add_dash_hud() -> void:
 	_dash_hud = DASH_HUD_SCENE.instantiate()
-
 	add_child(_dash_hud)
-
 	_dash_hud.bind(dash)
-
-	_dash_hud.visible = (
-		role == Statics.Role.rapido
-	)
+	_dash_hud.visible = (role == Statics.Role.rapido)
 
 	TagGame.life_lost.connect(func(id: int) -> void:
 		if id == get_multiplayer_authority():
@@ -221,22 +193,12 @@ func setup(player_data: Statics.PlayerData) -> void:
 	_player_name = player_data.name
 	role = player_data.role
 
-
-	if not Game.instance.player_updated.is_connected(
-		_on_player_data_updated
-	):
-		Game.instance.player_updated.connect(
-			_on_player_data_updated
-		)
-
+	if not Game.instance.player_updated.is_connected(_on_player_data_updated):
+		Game.instance.player_updated.connect(_on_player_data_updated)
 
 	set_multiplayer_authority(player_data.id)
-
 	_refresh_role_label()
-
-
 	camera_3d.current = is_multiplayer_authority()
-
 
 	if is_multiplayer_authority():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -258,10 +220,8 @@ func _input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():
 		return
 
-
 	if event.is_action_pressed("test"):
 		test.rpc()
-
 
 	# --------------------------------------------------------
 	# Mouse movement
@@ -278,10 +238,8 @@ func _input(event: InputEvent) -> void:
 			* mouse_sensitivity
 		)
 
-
 		var free_look_active: bool = \
 			Input.is_key_pressed(KEY_ALT)
-
 
 		if free_look_active:
 
@@ -297,13 +255,11 @@ func _input(event: InputEvent) -> void:
 				PI
 			)
 
-
 			var desired_pitch: float = (
 				base_camera_pitch
 				+ free_look_pitch
 				+ mouse_pitch
 			)
-
 
 			desired_pitch = clamp(
 				desired_pitch,
@@ -311,15 +267,9 @@ func _input(event: InputEvent) -> void:
 				deg_to_rad(max_pitch)
 			)
 
-
-			free_look_pitch = (
-				desired_pitch
-				- base_camera_pitch
-			)
-
+			free_look_pitch = (desired_pitch - base_camera_pitch)
 
 		else:
-
 			# -------------------------------------------------
 			# Normal third-person camera
 			# -------------------------------------------------
@@ -328,13 +278,11 @@ func _input(event: InputEvent) -> void:
 
 			base_camera_pitch += mouse_pitch
 
-
 			base_camera_pitch = clamp(
 				base_camera_pitch,
 				deg_to_rad(min_pitch),
 				deg_to_rad(max_pitch)
 			)
-
 
 		_apply_camera_rotation()
 
@@ -344,25 +292,21 @@ func _input(event: InputEvent) -> void:
 # ============================================================
 
 func _process(delta: float) -> void:
-
 	# --------------------------------------------------------
 	# Remote Player Visual Interpolation
 	# --------------------------------------------------------
 
 	if not is_multiplayer_authority():
-
 		global_position = global_position.lerp(
 			_target_position,
 			position_interpolate_speed * delta
 		)
-
 
 		global_rotation.y = lerp_angle(
 			global_rotation.y,
 			_target_rotation.y,
 			position_interpolate_speed * delta
 		)
-
 
 		grapple.show_synced(
 			grapple.origin_from(self),
@@ -372,24 +316,14 @@ func _process(delta: float) -> void:
 
 		return
 
-
 	# --------------------------------------------------------
 	# Authority Camera Recenter
 	# --------------------------------------------------------
 
-	grapple.draw(
-		grapple.origin_from(self)
-	)
-
-	#_keep_camera_back()
-
+	grapple.draw(grapple.origin_from(self))
 
 	if _tag_timer_label:
-		if (
-			TagGame.game_active
-			and TagGame.it_player_id
-			== get_multiplayer_authority()
-		):
+		if (TagGame.game_active and TagGame.it_player_id == get_multiplayer_authority()):
 			_tag_timer_label.visible = true
 			_tag_timer_label.text = str(
 				int(TagGame.time_left)
@@ -398,10 +332,8 @@ func _process(delta: float) -> void:
 		else:
 			_tag_timer_label.visible = false
 
-
 	if Input.is_key_pressed(KEY_ALT):
 		return
-
 
 	var weight: float = (
 		1.0
@@ -411,13 +343,11 @@ func _process(delta: float) -> void:
 		)
 	)
 
-
 	free_look_yaw = lerp_angle(
 		free_look_yaw,
 		0.0,
 		weight
 	)
-
 
 	free_look_pitch = lerp(
 		free_look_pitch,
@@ -425,14 +355,11 @@ func _process(delta: float) -> void:
 		weight
 	)
 
-
 	if abs(free_look_yaw) < 0.0001:
 		free_look_yaw = 0.0
 
-
 	if abs(free_look_pitch) < 0.0001:
 		free_look_pitch = 0.0
-
 
 	_apply_camera_rotation()
 	#_keep_camera_back()
@@ -440,10 +367,8 @@ func _process(delta: float) -> void:
 func _keep_camera_back() -> void:
 	var cam_pos: Vector3 = camera_3d.position
 
-
 	if cam_pos.z >= min_camera_distance:
 		return
-
 
 	cam_pos.z = min_camera_distance
 	camera_3d.position = cam_pos
@@ -475,26 +400,21 @@ func _physics_process(delta: float) -> void:
 
 			_prev_position = _target_position
 
-
 		var is_moving: bool = Vector2(
 			_remote_velocity.x,
 			_remote_velocity.z
 		).length() > 0.2
-
 
 		var just_landed: bool = (
 			not _remote_was_on_floor
 			and _remote_is_on_floor
 		)
 
-
 		var just_jumped: bool = \
 			_remote_just_jumped
 
-
 		_remote_just_jumped = false
 		_remote_was_on_floor = _remote_is_on_floor
-
 
 		# ----------------------------------------------------
 		# Remote slide animation state
@@ -508,9 +428,7 @@ func _physics_process(delta: float) -> void:
 			else:
 				stop_slide_animation()
 
-
 		_remote_was_sliding = _remote_is_sliding
-
 
 		_update_animation_state(
 			is_moving,
@@ -520,9 +438,7 @@ func _physics_process(delta: float) -> void:
 			_remote_onledge
 		)
 
-
 		return
-
 
 	# ========================================================
 	# LOCAL PLAYER
@@ -531,13 +447,11 @@ func _physics_process(delta: float) -> void:
 	var was_on_floor: bool = is_on_floor()
 	var just_jumped: bool = false
 
-
 	# --------------------------------------------------------
 	# General updates
 	# --------------------------------------------------------
 
 	raycast_detect_ledge()
-
 
 	grapple.tick_cooldown(delta)
 		
@@ -545,7 +459,6 @@ func _physics_process(delta: float) -> void:
 		grapple.origin_from(self),
 		delta
 	)
-
 
 	slide.tick_cooldown(delta)
 	dash.tick(delta)
@@ -564,11 +477,9 @@ func _physics_process(delta: float) -> void:
 			# entra la animación de climb.
 			stop_slide_animation(false)
 
-
 		grapple.cancel()
 
 		velocity = Vector3.ZERO
-
 
 		_update_animation_state(
 			false,
@@ -578,15 +489,12 @@ func _physics_process(delta: float) -> void:
 			climb.is_climbing
 		)
 
-
 		_send_state(
 			false,
 			climb.is_climbing
 		)
 
-
 		return
-
 
 	# --------------------------------------------------------
 	# Grapple input
@@ -608,19 +516,13 @@ func _physics_process(delta: float) -> void:
 			# Grapple toma prioridad.
 			stop_slide_animation(false)
 
-
-		if grapple.advance_pull(
-			self,
-			delta
-		):
+		if grapple.advance_pull(self, delta):
 			move_and_slide()
-
 
 			var grapple_moving: bool = Vector2(
 				velocity.x,
 				velocity.z
 			).length() > 0.2
-
 
 			_update_animation_state(
 				grapple_moving,
@@ -630,32 +532,23 @@ func _physics_process(delta: float) -> void:
 				false
 			)
 
-
 			_send_state(
 				false,
 				false
 			)
 
-
 			return
-
 
 	# --------------------------------------------------------
 	# Ledge / climb
 	# --------------------------------------------------------
 
-	if (
-		onledge
-		and climb.cooldown_left <= 0.0
-	):
-
+	if (onledge and climb.cooldown_left <= 0.0):
 		if slide.active:
 			slide.stop()
 			stop_slide_animation(false)
 
-
 		climb.start_climb(self, ledge_point)
-
 
 		_update_animation_state(
 			false,
@@ -665,27 +558,17 @@ func _physics_process(delta: float) -> void:
 			climb.is_climbing
 		)
 
-
 		_send_state(
 			false,
 			climb.is_climbing
 		)
-
-
 		return
 
-
 	else:
-
-		climb.cooldown_left = maxf(
-			climb.cooldown_left - delta,
-			0.0
-		)
-
-
+		climb.cooldown_left = maxf(climb.cooldown_left - delta, 0.0)
+		
 		if is_on_floor():
 			last_floor_y = global_position.y
-
 
 		if not is_on_floor():
 
@@ -731,11 +614,7 @@ func _physics_process(delta: float) -> void:
 	# Slide start
 	# --------------------------------------------------------
 
-	if (
-		Input.is_action_just_pressed("crouch")
-		and not dash.is_dashing()
-	):
-
+	if (Input.is_action_just_pressed("crouch") and not dash.is_dashing()):
 		if slide.can_start(self):
 			slide.start(self)
 			start_slide_animation()
@@ -746,31 +625,18 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	if slide.active:
-
 		if not Input.is_action_pressed("crouch"):
-
 			slide.stop()
-
 			stop_slide_animation()
 
-
 		else:
-
 			var was_sliding: bool = slide.active
 
-
-			slide.tick(
-				self,
-				delta
-			)
-
+			slide.tick(self, delta)
 
 			# SlideController puede terminar por tiempo
 			# o por falta de velocidad.
-			if (
-				was_sliding
-				and not slide.active
-			):
+			if (was_sliding and not slide.active):
 				stop_slide_animation()
 
 
@@ -779,29 +645,21 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	if slide.active:
-
 		move_and_slide()
-
 
 		# No llamamos _update_animation_state aquí.
 		# De lo contrario Sprint/Idle pisarían Slide.
-
-
 		_send_state(
 			false,
 			false
 		)
-
-
 		return
 
 	# --------------
 	# Dash
 	# --------------
 	if dash.advance(self, delta):
-
 		move_and_slide()
-
 		_update_animation_state(
 			true,
 			is_on_floor(),
@@ -809,7 +667,6 @@ func _physics_process(delta: float) -> void:
 			false,
 			false
 		)
-
 		_send_state(false, false)
 		return
 
@@ -843,7 +700,6 @@ func _physics_process(delta: float) -> void:
 	var is_sprinting: bool = \
 		Input.is_action_pressed("sprint")
 
-
 	if is_sprinting:
 		move_speed = (
 			max_move_speed
@@ -857,21 +713,14 @@ func _physics_process(delta: float) -> void:
 			* _role_speed_multiplier()
 		)
 
-
 	# --------------------------------------------------------
 	# Horizontal movement
 	# --------------------------------------------------------
 
-	var horizontal_velocity: Vector2 = Vector2(
-		velocity.x,
-		velocity.z
-	)
-
+	var horizontal_velocity: Vector2 = Vector2(velocity.x, velocity.z)
 	var result: Vector2 = horizontal_velocity
 
-
 	if is_on_floor():
-
 		var target: Vector2 = Vector2(
 			direction.x,
 			direction.z
@@ -889,51 +738,27 @@ func _physics_process(delta: float) -> void:
 		)
 
 	else:
-
 		# Drag suave y continuo. No borra un impulso de golpe.
-		result *= exp(
-			-air_drag * delta
-		)
+		result *= exp(-air_drag * delta)
 
-		var input_strength: float = minf(
-			move_input.length(),
-			1.0
-		)
+		var input_strength: float = minf(move_input.length(), 1.0)
 
 		if input_strength > 0.001:
 
-			var wish_direction: Vector2 = Vector2(
-				direction.x,
-				direction.z
-			).normalized()
-
-			var wish_speed: float = (
-				move_speed * input_strength
-			)
+			var wish_direction: Vector2 = Vector2(direction.x, direction.z).normalized()
+			var wish_speed: float = move_speed * input_strength
 
 			# Solo agrega aceleración en la dirección elegida.
 			# Presionar en contra reduce el momentum gradualmente;
 			# presionar a favor no limita un impulso más rápido.
-			var current_along_wish: float = (
-				result.dot(wish_direction)
-			)
-
-			var speed_to_add: float = (
-				wish_speed - current_along_wish
-			)
-
+			var current_along_wish: float = result.dot(wish_direction)
+			var speed_to_add: float = wish_speed - current_along_wish
 			if speed_to_add > 0.0:
-
 				var acceleration_step: float = minf(
 					speed_to_add,
 					air_acceleration * delta
 				)
-
-				result += (
-					wish_direction
-					* acceleration_step
-				)
-
+				result += (wish_direction * acceleration_step)
 
 	velocity.x = result.x
 	velocity.z = result.y
@@ -944,31 +769,15 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	move_and_slide()
-
-
-	update_animations(
-		is_sprinting
-	)
-
+	update_animations(is_sprinting)
 
 	# --------------------------------------------------------
 	# Landing & Animation detection
 	# --------------------------------------------------------
 
-	var just_landed: bool = (
-		not was_on_floor
-		and is_on_floor()
-	)
-
-
-	var moving: bool = (
-		move_input.length_squared()
-		> 0.01
-	)
-
-
+	var just_landed: bool = (not was_on_floor and is_on_floor())
+	var moving: bool = (move_input.length_squared() > 0.01)
 	var on_floor: bool = is_on_floor()
-
 
 	_update_animation_state(
 		moving,
@@ -977,7 +786,6 @@ func _physics_process(delta: float) -> void:
 		just_landed,
 		onledge
 	)
-
 
 	# --------------------------------------------------------
 	# Network Sync
@@ -995,17 +803,10 @@ func _physics_process(delta: float) -> void:
 var ledge_point: Vector3 = Vector3.ZERO
 
 func raycast_detect_ledge() -> bool:
-
-	onledge = (
-		ray_01.is_colliding()
-		and not ray_02.is_colliding()
-	)
-
-
+	onledge = (ray_01.is_colliding() and not ray_02.is_colliding())
 	if onledge:
 		ledge_point = \
 			ray_01.get_collision_point()
-
 
 	return onledge
 
@@ -1020,22 +821,11 @@ func raycast_detect_ledge() -> bool:
 func start_slide_animation() -> void:
 	animations.start_slide_animation()
 
-
-func stop_slide_animation(
-	play_exit: bool = true
-) -> void:
+func stop_slide_animation(play_exit: bool = true) -> void:
 	animations.stop_slide_animation(play_exit)
 
-
-func update_animations(
-	is_sprinting: bool
-) -> void:
-	animations.update_animations(
-		is_sprinting,
-		velocity,
-		slide.active
-	)
-
+func update_animations(is_sprinting: bool) -> void:
+	animations.update_animations(is_sprinting, velocity, slide.active)
 
 func _update_animation_state(
 	moving: bool,
@@ -1067,18 +857,12 @@ func _visual_slide_active() -> bool:
 
 @rpc("any_peer")
 func test() -> void:
-	Debug.log(
-		name,
-		10
-	)
+	Debug.log(name, 10)
 
 # climbing
 
-func _on_climb_started(
-	duration: float
-) -> void:
+func _on_climb_started(duration: float) -> void:
 	animations.play_climb(duration)
-
 
 # ============================================================
 # Extra Speed (Role)
@@ -1087,14 +871,12 @@ func _on_climb_started(
 func _role_speed_multiplier() -> float:
 	return rapido_speed_multiplier if role == Statics.Role.rapido else 1.0
 
-
 # ============================================================
 # Double Jump
 # ============================================================
 
 func _max_air_jumps() -> int:
 	return 1 if role == Statics.Role.doble_salto else 0
-
 
 # ============================================================
 # Grapple
@@ -1115,30 +897,15 @@ func _handle_grapple_input() -> void:
 		grapple.cancel()
 		return
 
-
 	if climb.is_climbing:
 		return
 
-
 	if grapple.is_on_cooldown():
-
-		Debug.log(
-			"Gancho en espera"
-		)
-
+		Debug.log("Gancho en espera")
 		return
 
-
-	if not grapple.try_launch(
-		role,
-		camera_3d,
-		self
-	):
-
-		Debug.log(
-			"Sin superficie. Apuntá a un bloque o pared."
-		)
-
+	if not grapple.try_launch(role, camera_3d, self):
+		Debug.log("Sin superficie. Apuntá a un bloque o pared.")
 
 # ======================
 # Dash
@@ -1173,41 +940,17 @@ func _handle_bomb_input() -> void:
 	if not Input.is_action_just_pressed("bomb"):
 		return
 
-	if bomb.try_launch(
-		role,
-		camera_3d,
-		self
-	):
+	if bomb.try_launch(role, camera_3d, self):
 		return
 
 	if role != Statics.Role.doble_vida:
-
-		Debug.log(
-			"La bomba es solo del rol doble vida."
-		)
+		Debug.log("La bomba es solo del rol doble vida.")
 
 	elif bomb.is_on_cooldown():
-
-		Debug.log(
-			"Bomba en espera"
-		)
+		Debug.log("Bomba en espera")
 
 
-func _on_bomb_launched(
-	origin: Vector3,
-	initial_velocity: Vector3
-) -> void:
-
-	if not is_multiplayer_authority():
-		return
-
-	_spawn_bomb_remote.rpc(
-		origin,
-		initial_velocity
-	)
-
-
-func _on_bomb_exploded(
+func receive_explosion_impulse(
 	center: Vector3,
 	radius: float,
 	force: float,
@@ -1218,85 +961,15 @@ func _on_bomb_exploded(
 	if not is_multiplayer_authority():
 		return
 
-	_explode_bomb_for_everyone.rpc(
-		center,
-		radius,
-		force,
-		falloff_exponent,
-		center_height
-	)
-
-
-@rpc("authority", "call_remote", "reliable")
-func _spawn_bomb_remote(
-	origin: Vector3,
-	initial_velocity: Vector3
-) -> void:
-
-	bomb.spawn_remote(
-		origin,
-		initial_velocity,
-		self
-	)
-
-
-@rpc("authority", "call_local", "reliable")
-func _explode_bomb_for_everyone(
-	center: Vector3,
-	radius: float,
-	force: float,
-	falloff_exponent: float,
-	center_height: float
-) -> void:
-
-	for node: Node in get_tree().get_nodes_in_group("players"):
-
-		var player: Player = node as Player
-
-		if (
-			player != null
-			and player.is_multiplayer_authority()
-		):
-			player.receive_bomb_impulse(
-				center,
-				radius,
-				force,
-				falloff_exponent,
-				center_height
-			)
-
-
-func receive_bomb_impulse(
-	center: Vector3,
-	radius: float,
-	force: float,
-	falloff_exponent: float,
-	center_height: float
-) -> void:
-
-	if not is_multiplayer_authority():
-		return
-
-	var body_center: Vector3 = (
-		global_position
-		+ Vector3.UP * center_height
-	)
-
+	var body_center: Vector3 = (global_position + Vector3.UP * center_height)
 	var offset: Vector3 = body_center - center
 	var distance: float = offset.length()
 
 	if distance >= radius:
 		return
 
-	var normalized_distance: float = (
-		distance / radius
-	)
-
-	var falloff: float = pow(
-		1.0 - normalized_distance,
-		falloff_exponent
-	)
-
+	var normalized_distance: float = (distance / radius)
+	var falloff: float = pow(1.0 - normalized_distance, falloff_exponent)
 	var direction: Vector3 = Vector3.UP
 
 	if distance > 0.001:
@@ -1333,26 +1006,21 @@ func _on_player_data_updated(
 	if id != get_multiplayer_authority():
 		return
 
-
 	var data: Statics.PlayerData = \
 		Game.instance.get_player(id)
-
 
 	if data == null:
 		return
 
-
 	role = data.role
 
 	_refresh_role_label()
-
 
 	if role != Statics.Role.gancho:
 		grapple.cancel()
 		
 	if role != Statics.Role.rapido:
 		dash.cancel(self)
-
 
 # ============================================================
 # Crosshair
@@ -1429,27 +1097,21 @@ func _crosshair_bar(
 	var bar: ColorRect = \
 		ColorRect.new()
 
-
 	bar.color = color
-
 
 	bar.mouse_filter = \
 		Control.MOUSE_FILTER_IGNORE
 
-
 	bar.set_anchors_preset(
 		Control.PRESET_CENTER
 	)
-
 
 	bar.offset_left = left
 	bar.offset_right = right
 	bar.offset_top = top
 	bar.offset_bottom = bottom
 
-
 	return bar
-
 
 # ============================================================
 # Tag HUD
@@ -1460,82 +1122,45 @@ func _add_tag_hud() -> void:
 	var layer: CanvasLayer = \
 		CanvasLayer.new()
 
-
 	layer.name = "TagHUD"
 	layer.layer = 20
-
 
 	_tag_timer_label = \
 		Label.new()
 
+	_tag_timer_label.add_theme_font_size_override("font_size", 32)
 
-	_tag_timer_label.add_theme_font_size_override(
-		"font_size",
-		32
-	)
-
-
-	_tag_timer_label.set_anchors_preset(
-		Control.PRESET_TOP_RIGHT
-	)
-
+	_tag_timer_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 
 	_tag_timer_label.offset_left = -100
 	_tag_timer_label.offset_top = 20
 
 	_tag_timer_label.visible = false
 
-
-	layer.add_child(
-		_tag_timer_label
-	)
-
+	layer.add_child(_tag_timer_label)
 
 	add_child(layer)
-
 
 # ============================================================
 # Tag
 # ============================================================
 
-func _on_tag_zone_body_entered(
-	body: Node3D
-) -> void:
+func _on_tag_zone_body_entered(body: Node3D) -> void:
 
 	if not is_multiplayer_authority():
 		return
 
-
-	if (
-		TagGame.it_player_id
-		!= get_multiplayer_authority()
-	):
+	if (TagGame.it_player_id != get_multiplayer_authority()):
 		return
 
-
-	if (
-		body == self
-		or not body is Player
-	):
+	if (body == self or not body is Player):
 		return
 
+	TagGame.request_tag.rpc_id(1, body.get_multiplayer_authority())
 
-	TagGame.request_tag.rpc_id(
-		1,
-		body.get_multiplayer_authority()
-	)
-
-
-func _on_player_exploded(
-	player_id: int
-) -> void:
-
-	if (
-		player_id
-		!= get_multiplayer_authority()
-	):
+func _on_player_exploded(player_id: int) -> void:
+	if (player_id != get_multiplayer_authority()):
 		return
-
 
 	set_physics_process(false)
 	set_process(false)
@@ -1554,16 +1179,13 @@ func _on_player_exploded(
 		tag_zone.monitoring = false
 		tag_zone.monitorable = false
 
-
 # ============================================================
 # Role Label
 # ============================================================
 
 func _refresh_role_label() -> void:
-
 	var role_name: String = \
 		Statics.get_role_name(role)
-
 
 	label_3d.text = (
 		"%s · %s"
@@ -1573,20 +1195,12 @@ func _refresh_role_label() -> void:
 		]
 	)
 
-
 	if is_multiplayer_authority():
-
-		Game.instance.player_id.text = (
-			"Rol: %s"
-			% role_name
-		)
-
+		Game.instance.player_id.text = ("Rol: %s" % role_name)
 		Game.instance.player_id.show()
 	
 	if _dash_hud:
-		_dash_hud.visible = (
-			role == Statics.Role.rapido
-		)
+		_dash_hud.visible = (role == Statics.Role.rapido)
 
 
 # ============================================================
