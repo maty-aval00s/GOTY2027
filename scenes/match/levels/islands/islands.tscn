@@ -1,0 +1,63 @@
+[gd_scene format=3 uid="uid://cotmci4y8vupf"]
+
+[ext_resource type="Material" uid="uid://bcltcwmka83th" path="res://addons/skybox_sampler/skies/02_golden_hour.tres" id="1_acuvh"]
+[ext_resource type="Script" uid="uid://cdha3f8pjhk4x" path="res://scenes/match/levels/islands/islands.gd" id="1_mryoe"]
+[ext_resource type="PackedScene" uid="uid://dmxaoy1chryah" path="res://scenes/match/player/player.tscn" id="2_aesq7"]
+[ext_resource type="Script" uid="uid://cf25gb5p6oca1" path="res://scenes/match/levels/islands/void.gd" id="3_aesq7"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_gjrbn"]
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = ExtResource("1_acuvh")
+
+[sub_resource type="Environment" id="Environment_v3bsq"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+reflected_light_source = 2
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_jutmd"]
+height = 5.0
+radius = 5.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_8e20f"]
+top_radius = 5.0
+bottom_radius = 5.0
+height = 5.0
+radial_segments = 10
+
+[node name="Islands" type="Node3D" unique_id=837601438]
+script = ExtResource("1_mryoe")
+player_scene = ExtResource("2_aesq7")
+
+[node name="void" type="Area3D" parent="." unique_id=2036127713]
+script = ExtResource("3_aesq7")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="void" unique_id=1128461931]
+shape = SubResource("WorldBoundaryShape3D_gjrbn")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1134384948]
+environment = SubResource("Environment_v3bsq")
+
+[node name="test_block" type="StaticBody3D" parent="." unique_id=2098950882]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="test_block" unique_id=1159163396]
+shape = SubResource("CylinderShape3D_jutmd")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="test_block" unique_id=2126582421]
+mesh = SubResource("CylinderMesh_8e20f")
+
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=1479877704]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.648243, 0)
+
+[node name="Marker3D" type="Marker3D" parent="SpawnPoints" unique_id=1168336883]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.549192, 0, 0)
+
+[node name="Marker3D2" type="Marker3D" parent="SpawnPoints" unique_id=1070373658]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3669887, 0, 0)
+
+[node name="Marker3D3" type="Marker3D" parent="SpawnPoints" unique_id=724320866]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.2656746)
+
+[node name="Players" type="Node3D" parent="." unique_id=1206276396]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3628345, 0)

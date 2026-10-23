@@ -122,6 +122,7 @@ func _on_players_updated() -> void:
 	if it_player_id not in alive_player_ids:
 		_start_round()
 
+# requestea tag cuando un jugador tagea a otro
 @rpc("any_peer", "call_local", "reliable")
 func request_tag(target_id: int) -> void:
 	if not multiplayer.is_server():
