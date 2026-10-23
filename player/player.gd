@@ -1564,42 +1564,10 @@ func _crosshair_bar(
 # ============================================================
 
 func _add_tag_hud() -> void:
-
-	var layer: CanvasLayer = \
-		CanvasLayer.new()
-
-
-	layer.name = "TagHUD"
-	layer.layer = 20
-
-
-	_tag_timer_label = \
-		Label.new()
-
-
-	_tag_timer_label.add_theme_font_size_override(
-		"font_size",
-		32
-	)
-
-
-	_tag_timer_label.set_anchors_preset(
-		Control.PRESET_TOP_RIGHT
-	)
-
-
-	_tag_timer_label.offset_left = -100
-	_tag_timer_label.offset_top = 20
-
-	_tag_timer_label.visible = false
-
-
-	layer.add_child(
-		_tag_timer_label
-	)
-
-
-	add_child(layer)
+	var hud := TagCountdownHUD.new()
+	hud.name = "TagHUD"
+	add_child(hud)
+	hud.setup(TagGame)
 
 
 # ============================================================
