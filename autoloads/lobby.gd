@@ -60,12 +60,36 @@ func _handle_peer_disconnected(id: int) -> void:
 	if id == 1:
 		# server disconnect will handle it
 		return
-	
-	if return_to_lobby_on_player_disconnect and \
-		get_tree().current_scene is not LobbyWaitingScreen:
-		go_to_lobby()
-	
+
+	# En partida no volvemos al lobby: TagGame saca al jugador y sigue
+	# (o termina si queda uno). Solo forzamos lobby si el export lo pide
+	# y todavía no empezó la match.
+	var in_waiting: bool = get_tree().current_scene is LobbyWaitingScreen
+	var in_match: bool = _is_match_scene(get_tree().current_scene)
+
 	Game.instance.remove_player(id)
+	_despawn_match_player(id)
+
+	if return_to_lobby_on_player_disconnect and not in_waiting and not in_match:
+		go_to_lobby()
+
+
+func _is_match_scene(scene: Node) -> bool:
+	if scene == null:
+		return false
+	return scene.has_node("Players") and scene.has_node("SpawnPoints")
+
+
+func _despawn_match_player(id: int) -> void:
+	var scene: Node = get_tree().current_scene
+	if scene == null:
+		return
+	var players_root: Node = scene.get_node_or_null("Players")
+	if players_root == null:
+		return
+	var player_node: Node = players_root.get_node_or_null(str(id))
+	if player_node:
+		player_node.queue_free()
 
 
 func _handle_server_disconnected() -> void:

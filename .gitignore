@@ -17,3 +17,5 @@ mono_crash.*.json
 builds/*.exe 
 GOTY2027.exe
 hito1.exe
+
+builds/

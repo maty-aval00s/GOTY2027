@@ -1,6 +1,8 @@
 class_name LobbyWaitingScreen
 extends Control
 
+const ARENA_SCENE_PATH: String = "res://scenes/match/match.tscn"
+
 @onready var player_texture: TextureRect = %PlayerTexture
 @onready var player_name: Label = %PlayerName
 @onready var role_button: Button = %RoleButton
@@ -13,8 +15,6 @@ extends Control
 @onready var start_timer: Timer = $StartTimer
 @onready var game_start_container: PanelContainer = %GameStartContainer
 @onready var game_start_counter: Label = %GameStartCounter
-
-
 
 var LOBBY_PLAYER_SCENE: PackedScene = preload("res://lobby/lobby_player.tscn")
 
@@ -33,9 +33,8 @@ func _ready() -> void:
 	role_button.pressed.connect(_handle_role_pressed)
 	role_container.hide()
 	game_start_container.hide()
-	
 	_update_ready_button()
-	
+
 	if Game.instance.use_roles:
 		_fill_role_container()
 		var role: Statics.Role = Game.instance.get_current_player().role
@@ -110,6 +109,7 @@ func _handle_vote_updated() -> void:
 		elif not start_timer.is_stopped():
 			_stop_timer.rpc()
 
+
 @rpc("reliable", "call_local")
 func _start_timer() -> void:
 	start_timer.start()
@@ -122,13 +122,12 @@ func _stop_timer() -> void:
 	start_timer.stop()
 	game_start_container.hide()
 	role_button.disabled = false
-	
 
 
 @rpc("reliable", "call_local")
 func _start_game() -> void:
 	Game.instance.set_current_player_vote(false)
-	get_tree().change_scene_to_packed(Game.instance.main_scene)
+	get_tree().change_scene_to_file(ARENA_SCENE_PATH)
 
 
 func _can_start_game() -> bool:
@@ -162,6 +161,7 @@ func _are_all_roles_unique() -> bool:
 		else:
 			return false
 	return true
+
 
 func _all_players_selected_role() -> bool:
 	for player: Statics.PlayerData in Game.instance.players:
