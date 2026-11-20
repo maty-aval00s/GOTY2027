@@ -5,8 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://dmxaoy1chryah" path="res://scenes/match/player/player.tscn" id="2_aesq7"]
 [ext_resource type="Script" uid="uid://cf25gb5p6oca1" path="res://scenes/match/levels/islands/void.gd" id="3_aesq7"]
 
-[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_gjrbn"]
-
 [sub_resource type="Sky" id="Sky_1"]
 sky_material = ExtResource("1_acuvh")
 
@@ -26,15 +24,11 @@ bottom_radius = 5.0
 height = 5.0
 radial_segments = 10
 
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_8e20f"]
+
 [node name="Islands" type="Node3D" unique_id=837601438]
 script = ExtResource("1_mryoe")
 player_scene = ExtResource("2_aesq7")
-
-[node name="void" type="Area3D" parent="." unique_id=2036127713]
-script = ExtResource("3_aesq7")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="void" unique_id=1128461931]
-shape = SubResource("WorldBoundaryShape3D_gjrbn")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1134384948]
 environment = SubResource("Environment_v3bsq")
@@ -61,3 +55,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.2656746)
 
 [node name="Players" type="Node3D" parent="." unique_id=1206276396]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3628345, 0)
+
+[node name="void_plane" type="Area3D" parent="." unique_id=1501885876]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+script = ExtResource("3_aesq7")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="void_plane" unique_id=90542057]
+shape = SubResource("WorldBoundaryShape3D_8e20f")
