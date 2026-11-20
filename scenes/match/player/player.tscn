@@ -17498,9 +17498,9 @@ margin = 0.25
 transform = Transform3D(1, 0, 0, 0, 0.99994516, -0.010471784, 0, 0.010471784, 0.99994516, 0, 0.2677858, 3.3990493)
 
 [node name="UAL2_Standard" parent="." unique_id=190529878 instance=ExtResource("2_qqgw4")]
-transform = Transform3D(-0.9979156, -0.016702203, -0.062333487, 0, 0.96592546, -0.25881904, 0.06453238, -0.25827947, -0.9639125, 0, 0.3, 0)
+transform = Transform3D(-0.9979156, -0.016702201, -0.062333487, 0, 0.9659254, -0.25881904, 0.06453238, -0.25827944, -0.9639125, 0, 0.3, 0)
 
-[node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 85218198) index="0" unique_id=2121876374]
+[node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 517251081) index="0" unique_id=222012580]
 bones/1/position = Vector3(0.052163642, 0.6139999, -0.08217772)
 bones/1/rotation = Quaternion(-0.00870193, -0.38121206, 0.044703707, 0.92336524)
 bones/3/rotation = Quaternion(-0.02223116, -0.026652904, 0.0134764435, 0.99930674)
@@ -17558,7 +17558,7 @@ bones/61/rotation = Quaternion(0.47708896, 0.29732254, -0.15193303, 0.8129588)
 bones/62/rotation = Quaternion(-0.65246797, -0.05858932, -0.12165084, 0.7456903)
 bones/63/rotation = Quaternion(0.000137094, 0.9643046, -0.26479498, 0.0004995797)
 
-[node name="AnimationPlayer" parent="UAL2_Standard" index="1" unique_id=2067861146]
+[node name="AnimationPlayer" parent="UAL2_Standard" index="1" unique_id=1994866662]
 "libraries/Sprint To Wall Climb" = SubResource("AnimationLibrary_3v1qs")
 
 [node name="AnimationPlayer2" type="AnimationPlayer" parent="UAL2_Standard" unique_id=68426989]

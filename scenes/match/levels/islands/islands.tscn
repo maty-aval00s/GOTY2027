@@ -59,8 +59,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.2656746)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3628345, 0)
 
 [node name="void_plane" type="Area3D" parent="." unique_id=1501885876]
-transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, -55.543488, 0)
-visible = false
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, -22.234215, 0)
 script = ExtResource("3_aesq7")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="void_plane" unique_id=90542057]

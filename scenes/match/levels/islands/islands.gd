@@ -7,15 +7,19 @@ extends Node3D
 
 
 # wraps around if index is too large
-func spawn_player(player_inst: Player, spawn_point_index: int) -> void:
+@rpc("any_peer", "call_local", "reliable")
+func spawn_player(player_id: int, spawn_point_index: int) -> void:
 	var spawn_point: Node3D = spawn_points.get_child(spawn_point_index % spawn_points.get_child_count())
+	var player_inst: Player = Game.instance.get_player(player_id).inst
 	player_inst.global_position = spawn_point.global_position
 
 func spawn_player_randomly(player_inst: Player) -> void:
 	var idx: int = randi_range(0, 67)
-	spawn_player(player_inst, idx)
+	var player_id: int = player_inst.get_multiplayer_authority()
+	spawn_player.rpc_id(player_id, player_id, idx)
 
 func handle_player_fell(player: Player) -> void:
+	print("player fell")
 	var owner_id := player.get_multiplayer_authority()
 	TagGame.request_tag_by_map(owner_id)
 	spawn_player_randomly(player)
@@ -23,15 +27,6 @@ func handle_player_fell(player: Player) -> void:
 func _ready() -> void:
 	void_plane.player_fell.connect(handle_player_fell)
 	TagGame.game_over.connect(_on_game_over)
-	for i: int in Game.instance.players.size():
-		var player_data: Statics.PlayerData = Game.instance.players[i]
-		var player_inst: Player = player_scene.instantiate()
-		player_inst.name = str(player_data.id)
-		players.add_child(player_inst)
-		player_inst.setup(player_data)
-		
-		# spawnear al jugador en el spawn con index i
-		spawn_player(player_inst, i)
 		
 	if multiplayer.is_server():
 		TagGame.start_game()
