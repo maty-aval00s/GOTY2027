@@ -34,11 +34,13 @@ player_scene = ExtResource("2_aesq7")
 environment = SubResource("Environment_v3bsq")
 
 [node name="test_block" type="StaticBody3D" parent="." unique_id=2098950882]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.6704893, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="test_block" unique_id=1159163396]
 shape = SubResource("CylinderShape3D_jutmd")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="test_block" unique_id=2126582421]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7173443, 0)
 mesh = SubResource("CylinderMesh_8e20f")
 
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=1479877704]
@@ -57,7 +59,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.2656746)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3628345, 0)
 
 [node name="void_plane" type="Area3D" parent="." unique_id=1501885876]
-transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, -55.543488, 0)
+visible = false
 script = ExtResource("3_aesq7")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="void_plane" unique_id=90542057]

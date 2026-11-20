@@ -111,7 +111,6 @@ func _on_players_updated() -> void:
 	if not disconnected:
 		return
 
-	# Queda uno (o ninguno): fin de partida, aunque el que se fue no fuera "it"
 	if alive_player_ids.size() <= 1:
 		var winner: int = alive_player_ids[0] if alive_player_ids.size() == 1 else -1
 		_sync_game_active.rpc(false)
