@@ -1,0 +1,110 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://ui/game_over.gd" id="1_script"]
+[ext_resource type="Theme" path="res://lobby/lobby_theme.tres" id="2_theme"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
+sky_horizon_color = Color(0.55, 0.48, 0.38, 1)
+ground_horizon_color = Color(0.28, 0.24, 0.2, 1)
+ground_bottom_color = Color(0.1, 0.09, 0.08, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
+
+[sub_resource type="Environment" id="Environment"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.66, 0.58, 1)
+ambient_light_energy = 0.45
+
+[sub_resource type="StandardMaterial3D" id="FloorMaterial"]
+albedo_color = Color(0.22, 0.2, 0.18, 1)
+
+[sub_resource type="PlaneMesh" id="FloorMesh"]
+size = Vector2(30, 30)
+material = SubResource("FloorMaterial")
+
+[node name="GameOver" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 4, 2)
+shadow_enabled = true
+light_energy = 1.15
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 3.4)
+light_color = Color(1, 0.92, 0.78, 1)
+light_energy = 1.4
+omni_range = 12.0
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("FloorMesh")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 6.2)
+current = true
+
+[node name="Players" type="Node3D" parent="."]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="Top" type="VBoxContainer" parent="CanvasLayer/Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 28.0
+offset_bottom = 150.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Title" type="Label" parent="CanvasLayer/Root/Top"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.93, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.06, 0.04, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 56
+text = "Ganador"
+horizontal_alignment = 1
+
+[node name="WinnerName" type="Label" parent="CanvasLayer/Root/Top"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.06, 0.04, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 36
+text = "Sin ganador"
+horizontal_alignment = 1
+
+[node name="Bottom" type="CenterContainer" parent="CanvasLayer/Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -88.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="MenuButton" type="Button" parent="CanvasLayer/Root/Bottom"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+text = "Volver al menú"

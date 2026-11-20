@@ -135,7 +135,45 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Zero"
 
-[node name="ReadyButton" type="Button" parent="MarginContainer2/VBoxContainer/MarginContainer/Control/MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer2/Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer#MarginContainer/VBoxContainer" index="3"]
+[node name="MapButton" type="Button" parent="MarginContainer2/VBoxContainer/MarginContainer/Control/MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer2/Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer#MarginContainer/VBoxContainer" index="3"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Map?"
+
+[node name="Control" type="Control" parent="MarginContainer2/VBoxContainer/MarginContainer/Control/MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer2/Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer#MarginContainer/VBoxContainer/MapButton" index="0"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 16.0
+offset_right = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="MapContainer" type="PanelContainer" parent="MarginContainer2/VBoxContainer/MarginContainer/Control/MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer2/Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer#MarginContainer/VBoxContainer/MapButton/Control" index="0"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -16.0
+offset_right = 32.0
+offset_bottom = 16.0
+grow_vertical = 2
+theme_type_variation = &"Darker"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer2/VBoxContainer/MarginContainer/Control/MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer2/Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer#MarginContainer/VBoxContainer/MapButton/Control/MapContainer" index="0"]
+layout_mode = 2
+theme_type_variation = &"Tight"
+
+[node name="MapList" type="VBoxContainer" parent="MarginContainer2/VBoxContainer/MarginContainer/Control/MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer2/Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer#MarginContainer/VBoxContainer/MapButton/Control/MapContainer/MarginContainer" index="0"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Zero"
+
+[node name="ReadyButton" type="Button" parent="MarginContainer2/VBoxContainer/MarginContainer/Control/MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer2/Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel_MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer#MarginContainer/VBoxContainer" index="4"]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
