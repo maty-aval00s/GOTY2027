@@ -1,7 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://ui/game_over.gd" id="1_script"]
-[ext_resource type="Theme" path="res://lobby/lobby_theme.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://ddudtakl2vtv5" path="res://ui/game_over.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://bwgdrcgopd0s1" path="res://scenes/lobby/lobby_theme.tres" id="2_theme"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_horizon_color = Color(0.55, 0.48, 0.38, 1)

@@ -5,7 +5,7 @@ signal player_exploded(player_id: int)
 signal game_over(winner_id: int)
 signal life_lost(player_id:int)
 
-const START_TIME: float = 50.0
+const START_TIME: float = 1000.0
 const TAG_COOLDOWN: float = 1.0
 const SYNC_INTERVAL: float = 1.0
 const EXTRA_LIFE_TIME: float =25.0
@@ -121,6 +121,17 @@ func _on_players_updated() -> void:
 	if it_player_id not in alive_player_ids:
 		_start_round()
 
+# requestea tag de parte del mapa ("el mapa te tagea")
+@rpc("any_peer", "call_local", "reliable")
+func request_tag_by_map(target_id: int) -> void:
+	if not multiplayer.is_server(): return
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id != 0 and sender_id != target_id: return
+	if not game_active or target_id not in alive_player_ids: return
+	it_player_id = target_id
+	_sync_it.rpc(it_player_id, time_left)
+
+# requestea tag cuando un jugador tagea a otro
 @rpc("any_peer", "call_local", "reliable")
 func request_tag(target_id: int) -> void:
 	if not multiplayer.is_server():

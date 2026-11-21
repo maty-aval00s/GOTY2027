@@ -1,15 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://cgsspji18smle"]
+[gd_scene format=3 uid="uid://57sil4m6nfve"]
 
-[ext_resource type="Theme" uid="uid://bwgdrcgopd0s1" path="res://lobby/lobby_theme.tres" id="1_0ce57"]
+[ext_resource type="Theme" uid="uid://bwgdrcgopd0s1" path="res://scenes/lobby/lobby_theme.tres" id="1_bob82"]
+[ext_resource type="Script" uid="uid://cuqvj8grm28qy" path="res://ui/credits.gd" id="2_hvxmk"]
 
-[node name="LobbyScreen" type="Control"]
+[node name="Credits" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("1_0ce57")
+theme = ExtResource("1_bob82")
+script = ExtResource("2_hvxmk")
 
 [node name="MarginContainer2" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -45,7 +47,8 @@ size_flags_horizontal = 4
 size_flags_vertical = 10
 size_flags_stretch_ratio = 0.5
 theme_type_variation = &"Title"
-text = "Screen"
+text = "Credits
+"
 horizontal_alignment = 1
 
 [node name="BackButton" type="Button" parent="MarginContainer2/VBoxContainer/Panel"]
@@ -71,7 +74,7 @@ theme_type_variation = &"Zero"
 layout_mode = 2
 theme_type_variation = &"Zero"
 
-[node name="MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer" type="PanelContainer" parent="MarginContainer2/VBoxContainer/MarginContainer/Control"]
+[node name="MarginContainer2_VBoxContainer_MarginContainer_Panel#PanelContainer" type="RichTextLabel" parent="MarginContainer2/VBoxContainer/MarginContainer/Control"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -84,3 +87,8 @@ offset_bottom = 290.0
 grow_horizontal = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+bbcode_enabled = true
+text = "[center]
+[b]Lobby[/b]
+Elías Zelada
+[/center]"

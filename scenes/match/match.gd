@@ -45,6 +45,7 @@ func _spawn_players() -> void:
 		var player_inst: Player = player_scene.instantiate()
 		player_inst.name = str(player_data.id)
 		players.add_child(player_inst)
+		player_data.inst = player_inst
 		player_inst.setup(player_data)
 		var spawn_point: Node3D = spawn_points.get_child(i % spawn_points.get_child_count())
 		player_inst.global_position = spawn_point.global_position

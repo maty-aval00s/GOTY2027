@@ -50,7 +50,7 @@ func _join() -> void:
 func _handle_connected_to_server() -> void:
 	get_tree().paused = false
 	Game.instance.add_player(Statics.PlayerData.new(multiplayer.get_unique_id(), player_name.text))
-	get_tree().change_scene_to_file("res://lobby/waiting_screen.tscn")
+	get_tree().change_scene_to_file("res://scenes/lobby/waiting_screen.tscn")
 
 
 func _handle_connection_failed() -> void:
