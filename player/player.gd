@@ -10,10 +10,16 @@ extends CharacterBody3D
 @export var rapido_speed_multiplier: float = 1.25
 @export var move_speed: float = 14.0
 @export var jump_speed: float = 15.0
+
+# Ground movement responds quickly, but does not snap instantly.
+@export var ground_acceleration: float = 70.0
+@export var ground_deceleration: float = 55.0
+
+# Air movement adds steering acceleration without deleting momentum.
+@export var air_acceleration: float = 24.0
+@export var air_drag: float = 0.20
+
 @export var double_jump_speed: float = 13.0
-@export var acceleration: float = 300.0
-@export var climb_forward_offset: float = -0.9
-@export var climb_up_offset: float = 0.3
 
 @export var gravity_multiplier: float = 3.0
 @export var fall_gravity_multiplier: float = 4.5
@@ -36,93 +42,44 @@ extends CharacterBody3D
 
 @export var min_camera_distance: float = 3.2
 
-
 # ============================================================
 # Nodes
 # ============================================================
 
 @onready var camera_pivot: Node3D = $CameraPivot
-
 @onready var spring_arm: SpringArm3D = $CameraPivot/SpringArm3D
-
 @onready var camera_3d: Camera3D = \
 	$CameraPivot/SpringArm3D/Camera3D
 
 @onready var label_3d: Label3D = $Label3D
 
-
-# Idle / Sprint / Jump
-@onready var anim_player: AnimationPlayer = \
-	$UAL2_Standard/AnimationPlayer2
-
-
-# SprintAnimation adicional
-@onready var animation_player: AnimationPlayer = \
-	$UAL2_Standard/AnimationPlayer3
-
-
-# Climb + Slide
-@onready var climb_anim_player: AnimationPlayer = \
-	$UAL2_Standard/AnimationPlayer
-
-
 # Raycasts
 @onready var ray_01: RayCast3D = $Ray1
 @onready var ray_02: RayCast3D = $Ray2
 
-
 # Controllers
 @onready var grapple: GrappleHook = $GrappleHook
 @onready var slide: SlideController = $SlideController
+@onready var dash: DashController = $Dash
+@onready var bomb: BombController = $BombController
+@onready var climb: ClimbController = $ClimbController
 
 
 @onready var tag_zone: Area3D = $TagZone
+@onready var animations: PlayerAnimations = \
+	$PlayerAnimations
 
+# ===================
+# hud
+# ===================
+const DASH_HUD_SCENE := preload(
+	"res://ui/hud/dash_hud.tscn"
+)
+var _dash_hud: DashHud
 
-# ============================================================
-# Animations
-# ============================================================
-
-const ANIM_IDLE: StringName = \
-	&"UAL1_Standard_RM/Idle"
-
-const ANIM_SPRINT: StringName = \
-	&"UAL1_Standard_RM/Sprint"
-
-const ANIM_JUMP_START: StringName = \
-	&"UAL1_Standard_RM/Jump_Start"
-
-const ANIM_JUMP_LOOP: StringName = \
-	&"UAL1_Standard_RM/Jump"
-
-const ANIM_JUMP_LAND: StringName = \
-	&"UAL1_Standard_RM/Jump_Land"
-
-const ANIM_CLIMB: StringName = \
-	&"ClimbUp_1m"
-
-const ANIM_DANCE: StringName = \
-	&"UAL1_Standard_RM/Dance"
-
-const ANIM_DEATH: StringName = \
-	&"UAL1_Standard_RM/Death01"
-
-
-# ------------------------------------------------------------
-# Slide animations
-# Estas están en:
-# $UAL2_Standard/AnimationPlayer
-# ------------------------------------------------------------
-
-const ANIM_SLIDE_START: StringName = &"Slide_Start"
-const ANIM_SLIDE: StringName = &"Slide"
-const ANIM_SLIDE_EXIT: StringName = &"Slide_Exit"
-
-
-const LAND_ANIMATION_SPEED: float = 2.0
+# This changes movement speed, so it stays in Player instead of the
+# animation controller.
 const SPRINT_SPEED_MULTIPLIER: float = 1.5
-const ANIM_CLIMB_DURATION: float = 0.6
-
 
 # ============================================================
 # Camera & Interpolation state
@@ -136,7 +93,6 @@ var free_look_pitch: float = 0.0
 var camera_center_yaw: float = 0.0
 var camera_center_roll: float = 0.0
 
-
 # ============================================================
 # Network Targets
 # ============================================================
@@ -144,11 +100,9 @@ var camera_center_roll: float = 0.0
 var _target_position: Vector3 = Vector3.ZERO
 var _target_rotation: Vector3 = Vector3.ZERO
 
-
 # ============================================================
 # Remote state
 # ============================================================
-
 var _remote_is_on_floor: bool = true
 var _remote_was_on_floor: bool = true
 
@@ -164,17 +118,13 @@ var _remote_grapple_point: Vector3 = Vector3.ZERO
 var _remote_is_sliding: bool = false
 var _remote_was_sliding: bool = false
 
-
 # ============================================================
 # Player state
 # ============================================================
-
 var onledge: bool = false
-var is_climbing: bool = false
 var air_jumps_left: int = 0
 
 var last_floor_y: float = 0.0
-var climb_cooldown: float = 0.0
 
 var role: Statics.Role = Statics.Role.NONE
 
@@ -183,16 +133,9 @@ var podium_mode: bool = false
 var _player_name: String = ""
 var _tag_timer_label: Label
 
-
-# True mientras se está reproduciendo Slide_Exit.
-# Evita que Idle/Sprint pisen esa animación.
-var _slide_exit_playing: bool = false
-
-
 # ============================================================
 # Initialization
 # ============================================================
-
 func _ready() -> void:
 	if podium_mode:
 		set_physics_process(false)
@@ -203,127 +146,89 @@ func _ready() -> void:
 
 	process_priority = 1
 
+	add_to_group("players")
+
 	spring_arm.add_excluded_object(get_rid())
-
-	climb_anim_player.callback_mode_process = \
-		AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
-
-
-	# Escuchamos cuando terminan Slide_Start y Slide_Exit.
-	if not climb_anim_player.animation_finished.is_connected(
-		_on_action_animation_finished
-	):
-		climb_anim_player.animation_finished.connect(
-			_on_action_animation_finished
-		)
-
 
 	_prev_position = global_position
 	_target_position = global_position
 	_target_rotation = global_rotation
 
-
 	base_camera_pitch = camera_pivot.rotation.x
 	camera_center_yaw = camera_pivot.rotation.y
 	camera_center_roll = camera_pivot.rotation.z
 
-
 	_apply_camera_rotation()
 
+	tag_zone.body_entered.connect(_on_tag_zone_body_entered)
+	TagGame.player_exploded.connect(_on_player_exploded)
+	
+	# event handlers
+	climb.climb_started.connect(_on_climb_started)
 
-	tag_zone.body_entered.connect(
-		_on_tag_zone_body_entered
-	)
+func _add_dash_hud() -> void:
+	_dash_hud = DASH_HUD_SCENE.instantiate()
+	add_child(_dash_hud)
+	_dash_hud.bind(dash)
+	_dash_hud.visible = (role == Statics.Role.rapido)
 
-	TagGame.player_exploded.connect(
-		_on_player_exploded
-	)
-	TagGame.life_lost.connect(func(id:int)-> void:
+	TagGame.life_lost.connect(func(id: int) -> void:
 		if id == get_multiplayer_authority():
 			Debug.log("¡Usaste tu vida extra!", 4.0)
+
 		)
 	add_to_group("players")
 	
+
 func setup(player_data: Statics.PlayerData) -> void:
 	_player_name = player_data.name
 	role = player_data.role
 
-
-	if not Game.instance.player_updated.is_connected(
-		_on_player_data_updated
-	):
-		Game.instance.player_updated.connect(
-			_on_player_data_updated
-		)
-
+	if not Game.instance.player_updated.is_connected(_on_player_data_updated):
+		Game.instance.player_updated.connect(_on_player_data_updated)
 
 	set_multiplayer_authority(player_data.id)
-
 	_refresh_role_label()
-
-
 	camera_3d.current = is_multiplayer_authority()
-
 
 	if is_multiplayer_authority():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 		_add_crosshair()
 		_add_tag_hud()
+		_add_dash_hud()
 
 		Debug.log(
 			"Rol: %s" % Statics.get_role_name(role),
 			6.0
 		)
 
-
 # ============================================================
 # Input
 # ============================================================
-
 func _input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():
 		return
 
-
 	if event.is_action_pressed("test"):
 		test.rpc()
-
 
 	# --------------------------------------------------------
 	# Mouse movement
 	# --------------------------------------------------------
-
 	if event is InputEventMouseMotion:
-		var mouse_yaw: float = (
-			-event.relative.x
-			* mouse_sensitivity
-		)
+		var mouse_yaw: float = -event.relative.x * mouse_sensitivity
 
-		var mouse_pitch: float = (
-			-event.relative.y
-			* mouse_sensitivity
-		)
-
+		var mouse_pitch: float = -event.relative.y * mouse_sensitivity
 
 		var free_look_active: bool = \
 			Input.is_key_pressed(KEY_ALT)
 
-
 		if free_look_active:
-
-			# -------------------------------------------------
 			# ALT HELD
-			# -------------------------------------------------
-
 			free_look_yaw += mouse_yaw
 
-			free_look_yaw = wrapf(
-				free_look_yaw,
-				-PI,
-				PI
-			)
-
+			free_look_yaw = wrapf(free_look_yaw, -PI, PI)
 
 			var desired_pitch: float = (
 				base_camera_pitch
@@ -331,65 +236,43 @@ func _input(event: InputEvent) -> void:
 				+ mouse_pitch
 			)
 
-
 			desired_pitch = clamp(
 				desired_pitch,
 				deg_to_rad(min_pitch),
 				deg_to_rad(max_pitch)
 			)
 
-
-			free_look_pitch = (
-				desired_pitch
-				- base_camera_pitch
-			)
-
+			free_look_pitch = (desired_pitch - base_camera_pitch)
 
 		else:
-
-			# -------------------------------------------------
 			# Normal third-person camera
-			# -------------------------------------------------
-
 			rotate_y(mouse_yaw)
-
 			base_camera_pitch += mouse_pitch
-
-
 			base_camera_pitch = clamp(
 				base_camera_pitch,
 				deg_to_rad(min_pitch),
 				deg_to_rad(max_pitch)
 			)
 
-
 		_apply_camera_rotation()
-
 
 # ============================================================
 # Visual Process
 # ============================================================
 
 func _process(delta: float) -> void:
-
-	# --------------------------------------------------------
 	# Remote Player Visual Interpolation
-	# --------------------------------------------------------
-
 	if not is_multiplayer_authority():
-
 		global_position = global_position.lerp(
 			_target_position,
 			position_interpolate_speed * delta
 		)
-
 
 		global_rotation.y = lerp_angle(
 			global_rotation.y,
 			_target_rotation.y,
 			position_interpolate_speed * delta
 		)
-
 
 		grapple.show_synced(
 			grapple.origin_from(self),
@@ -399,24 +282,14 @@ func _process(delta: float) -> void:
 
 		return
 
-
 	# --------------------------------------------------------
 	# Authority Camera Recenter
 	# --------------------------------------------------------
 
-	grapple.draw(
-		grapple.origin_from(self)
-	)
-
-	_keep_camera_back()
-
+	grapple.draw(grapple.origin_from(self))
 
 	if _tag_timer_label:
-		if (
-			TagGame.game_active
-			and TagGame.it_player_id
-			== get_multiplayer_authority()
-		):
+		if (TagGame.game_active and TagGame.it_player_id == get_multiplayer_authority()):
 			_tag_timer_label.visible = true
 			_tag_timer_label.text = str(
 				int(TagGame.time_left)
@@ -425,10 +298,8 @@ func _process(delta: float) -> void:
 		else:
 			_tag_timer_label.visible = false
 
-
 	if Input.is_key_pressed(KEY_ALT):
 		return
-
 
 	var weight: float = (
 		1.0
@@ -438,13 +309,11 @@ func _process(delta: float) -> void:
 		)
 	)
 
-
 	free_look_yaw = lerp_angle(
 		free_look_yaw,
 		0.0,
 		weight
 	)
-
 
 	free_look_pitch = lerp(
 		free_look_pitch,
@@ -452,30 +321,23 @@ func _process(delta: float) -> void:
 		weight
 	)
 
-
 	if abs(free_look_yaw) < 0.0001:
 		free_look_yaw = 0.0
-
 
 	if abs(free_look_pitch) < 0.0001:
 		free_look_pitch = 0.0
 
-
 	_apply_camera_rotation()
-	_keep_camera_back()
-
+	#_keep_camera_back()
 
 func _keep_camera_back() -> void:
 	var cam_pos: Vector3 = camera_3d.position
 
-
 	if cam_pos.z >= min_camera_distance:
 		return
 
-
 	cam_pos.z = min_camera_distance
 	camera_3d.position = cam_pos
-
 
 func _apply_camera_rotation() -> void:
 	camera_pivot.rotation = Vector3(
@@ -483,7 +345,6 @@ func _apply_camera_rotation() -> void:
 		camera_center_yaw + free_look_yaw,
 		camera_center_roll
 	)
-
 
 # ============================================================
 # Physics
@@ -505,26 +366,21 @@ func _physics_process(delta: float) -> void:
 
 			_prev_position = _target_position
 
-
 		var is_moving: bool = Vector2(
 			_remote_velocity.x,
 			_remote_velocity.z
 		).length() > 0.2
-
 
 		var just_landed: bool = (
 			not _remote_was_on_floor
 			and _remote_is_on_floor
 		)
 
-
 		var just_jumped: bool = \
 			_remote_just_jumped
 
-
 		_remote_just_jumped = false
 		_remote_was_on_floor = _remote_is_on_floor
-
 
 		# ----------------------------------------------------
 		# Remote slide animation state
@@ -538,9 +394,7 @@ func _physics_process(delta: float) -> void:
 			else:
 				stop_slide_animation()
 
-
 		_remote_was_sliding = _remote_is_sliding
-
 
 		_update_animation_state(
 			is_moving,
@@ -550,9 +404,7 @@ func _physics_process(delta: float) -> void:
 			_remote_onledge
 		)
 
-
 		return
-
 
 	# ========================================================
 	# LOCAL PLAYER
@@ -561,31 +413,28 @@ func _physics_process(delta: float) -> void:
 	var was_on_floor: bool = is_on_floor()
 	var just_jumped: bool = false
 
-
 	# --------------------------------------------------------
 	# General updates
 	# --------------------------------------------------------
 
 	raycast_detect_ledge()
 
-
 	grapple.tick_cooldown(delta)
-
+		
 	grapple.tick_retract(
 		grapple.origin_from(self),
 		delta
 	)
 
-
 	slide.tick_cooldown(delta)
-
+	dash.tick(delta)
+	bomb.tick(delta)
 
 	# --------------------------------------------------------
 	# Climbing
 	# --------------------------------------------------------
 
-	if is_climbing:
-
+	if climb.is_climbing:
 		if slide.active:
 			slide.stop()
 
@@ -593,130 +442,60 @@ func _physics_process(delta: float) -> void:
 			# entra la animación de climb.
 			stop_slide_animation(false)
 
-
 		grapple.cancel()
-
 		velocity = Vector3.ZERO
-
-
-		_update_animation_state(
-			false,
-			is_on_floor(),
-			false,
-			false,
-			is_climbing
-		)
-
-
-		_send_state(
-			false,
-			is_climbing
-		)
-
+		_update_animation_state(false, is_on_floor(), false, false, climb.is_climbing)
+		_send_state(false, climb.is_climbing)
 
 		return
-
 
 	# --------------------------------------------------------
 	# Grapple input
 	# --------------------------------------------------------
 
 	_handle_grapple_input()
-
+	_handle_dash_input()
+	_handle_bomb_input()
 
 	# --------------------------------------------------------
 	# Grapple movement
 	# --------------------------------------------------------
 
 	if grapple.is_pulling():
-
 		if slide.active:
 			slide.stop()
-
 			# Grapple toma prioridad.
 			stop_slide_animation(false)
 
-
-		if grapple.advance_pull(
-			self,
-			delta
-		):
+		if grapple.advance_pull(self, delta):
 			move_and_slide()
-
-
-			var grapple_moving: bool = Vector2(
-				velocity.x,
-				velocity.z
-			).length() > 0.2
-
-
-			_update_animation_state(
-				grapple_moving,
-				is_on_floor(),
-				false,
-				false,
-				false
-			)
-
-
-			_send_state(
-				false,
-				false
-			)
-
+			var grapple_moving: bool = Vector2(velocity.x, velocity.z).length() > 0.2
+			_update_animation_state(grapple_moving, is_on_floor(), false, false, false)
+			_send_state(false, false)
 
 			return
-
 
 	# --------------------------------------------------------
 	# Ledge / climb
 	# --------------------------------------------------------
 
-	if (
-		onledge
-		and climb_cooldown <= 0.0
-	):
-
+	if (onledge and climb.cooldown_left <= 0.0):
 		if slide.active:
 			slide.stop()
 			stop_slide_animation(false)
 
-
-		start_climb()
-
-
-		_update_animation_state(
-			false,
-			is_on_floor(),
-			false,
-			false,
-			is_climbing
-		)
-
-
-		_send_state(
-			false,
-			is_climbing
-		)
-
-
+		climb.start_climb(self, ledge_point)
+		_update_animation_state(false, is_on_floor(), false, false, climb.is_climbing)
+		_send_state(false, climb.is_climbing)
 		return
 
-
 	else:
-
-		climb_cooldown = maxf(
-			climb_cooldown - delta,
-			0.0
-		)
-
-
+		climb.cooldown_left = maxf(climb.cooldown_left - delta, 0.0)
+		
 		if is_on_floor():
 			last_floor_y = global_position.y
 
-
 		if not is_on_floor():
-
 			if velocity.y < 0.0:
 				velocity += (
 					get_gravity()
@@ -736,15 +515,10 @@ func _physics_process(delta: float) -> void:
 	# Jump
 	# --------------------------------------------------------
 
-	# --------------------------------------------------------
-# Jump
-# --------------------------------------------------------
-
 	if is_on_floor():
 		air_jumps_left = _max_air_jumps()
 
 	if Input.is_action_just_pressed("jump"):
-
 		if is_on_floor():
 			if slide.active:
 				slide.stop()
@@ -763,11 +537,9 @@ func _physics_process(delta: float) -> void:
 	# Slide start
 	# --------------------------------------------------------
 
-	if Input.is_action_just_pressed("crouch"):
-
+	if (Input.is_action_just_pressed("crouch") and not dash.is_dashing()):
 		if slide.can_start(self):
 			slide.start(self)
-
 			start_slide_animation()
 
 
@@ -776,31 +548,18 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	if slide.active:
-
 		if not Input.is_action_pressed("crouch"):
-
 			slide.stop()
-
 			stop_slide_animation()
 
-
 		else:
-
 			var was_sliding: bool = slide.active
 
-
-			slide.tick(
-				self,
-				delta
-			)
-
+			slide.tick(self, delta)
 
 			# SlideController puede terminar por tiempo
 			# o por falta de velocidad.
-			if (
-				was_sliding
-				and not slide.active
-			):
+			if (was_sliding and not slide.active):
 				stop_slide_animation()
 
 
@@ -809,20 +568,29 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	if slide.active:
-
 		move_and_slide()
-
 
 		# No llamamos _update_animation_state aquí.
 		# De lo contrario Sprint/Idle pisarían Slide.
-
-
 		_send_state(
 			false,
 			false
 		)
+		return
 
-
+	# --------------
+	# Dash
+	# --------------
+	if dash.advance(self, delta):
+		move_and_slide()
+		_update_animation_state(
+			true,
+			is_on_floor(),
+			false,
+			false,
+			false
+		)
+		_send_state(false, false)
 		return
 
 
@@ -855,7 +623,6 @@ func _physics_process(delta: float) -> void:
 	var is_sprinting: bool = \
 		Input.is_action_pressed("sprint")
 
-
 	if is_sprinting:
 		move_speed = (
 			max_move_speed
@@ -864,32 +631,57 @@ func _physics_process(delta: float) -> void:
 		)
 
 	else:
-		move_speed = (max_move_speed
-				* _role_speed_multiplier()
+		move_speed = (
+			max_move_speed
+			* _role_speed_multiplier()
+		)
+
+	# --------------------------------------------------------
+	# Horizontal movement
+	# --------------------------------------------------------
+
+	var horizontal_velocity: Vector2 = Vector2(velocity.x, velocity.z)
+	var result: Vector2 = horizontal_velocity
+
+	if is_on_floor():
+		var target: Vector2 = Vector2(
+			direction.x,
+			direction.z
+		) * move_speed
+
+		var ground_rate: float = (
+			ground_acceleration
+			if move_input.length_squared() > 0.01
+			else ground_deceleration
+		)
+
+		result = horizontal_velocity.move_toward(
+			target,
+			ground_rate * delta
+		)
+
+	else:
+		# Drag suave y continuo. No borra un impulso de golpe.
+		result *= exp(-air_drag * delta)
+
+		var input_strength: float = minf(move_input.length(), 1.0)
+
+		if input_strength > 0.001:
+
+			var wish_direction: Vector2 = Vector2(direction.x, direction.z).normalized()
+			var wish_speed: float = move_speed * input_strength
+
+			# Solo agrega aceleración en la dirección elegida.
+			# Presionar en contra reduce el momentum gradualmente;
+			# presionar a favor no limita un impulso más rápido.
+			var current_along_wish: float = result.dot(wish_direction)
+			var speed_to_add: float = wish_speed - current_along_wish
+			if speed_to_add > 0.0:
+				var acceleration_step: float = minf(
+					speed_to_add,
+					air_acceleration * delta
 				)
-
-
-	# --------------------------------------------------------
-	# Acceleration
-	# --------------------------------------------------------
-
-	var target: Vector2 = Vector2(
-		direction.x,
-		direction.z
-	) * move_speed
-
-
-	var current: Vector2 = Vector2(
-		velocity.x,
-		velocity.z
-	)
-
-
-	var result: Vector2 = current.move_toward(
-		target,
-		acceleration * delta
-	)
-
+				result += (wish_direction * acceleration_step)
 
 	velocity.x = result.x
 	velocity.z = result.y
@@ -900,31 +692,15 @@ func _physics_process(delta: float) -> void:
 	# --------------------------------------------------------
 
 	move_and_slide()
-
-
-	update_animations(
-		is_sprinting
-	)
-
+	update_animations(is_sprinting)
 
 	# --------------------------------------------------------
 	# Landing & Animation detection
 	# --------------------------------------------------------
 
-	var just_landed: bool = (
-		not was_on_floor
-		and is_on_floor()
-	)
-
-
-	var moving: bool = (
-		move_input.length_squared()
-		> 0.01
-	)
-
-
+	var just_landed: bool = (not was_on_floor and is_on_floor())
+	var moving: bool = (move_input.length_squared() > 0.01)
 	var on_floor: bool = is_on_floor()
-
 
 	_update_animation_state(
 		moving,
@@ -933,7 +709,6 @@ func _physics_process(delta: float) -> void:
 		just_landed,
 		onledge
 	)
-
 
 	# --------------------------------------------------------
 	# Network Sync
@@ -944,249 +719,36 @@ func _physics_process(delta: float) -> void:
 		onledge
 	)
 
-
 # ============================================================
 # Ledge / Obstacle Detection
 # ============================================================
 
 var ledge_point: Vector3 = Vector3.ZERO
 
-
 func raycast_detect_ledge() -> bool:
-
-	onledge = (
-		ray_01.is_colliding()
-		and not ray_02.is_colliding()
-	)
-
-
+	onledge = (ray_01.is_colliding() and not ray_02.is_colliding())
 	if onledge:
 		ledge_point = \
 			ray_01.get_collision_point()
-
 
 	return onledge
 
 
 # ============================================================
-# Climb
-# ============================================================
-
-func start_climb() -> void:
-	is_climbing = true
-
-
-	# Cualquier Slide_Exit pendiente deja de tener prioridad.
-	_slide_exit_playing = false
-
-
-	var forward: Vector3 = (
-		global_transform.basis
-		* Vector3(
-			0,
-			0,
-			climb_forward_offset
-		)
-	)
-
-
-	var target_pos: Vector3 = Vector3(
-		global_position.x + forward.x,
-		ledge_point.y + climb_up_offset,
-		global_position.z + forward.z
-	)
-
-
-	var climb_duration: float = 0.5
-
-
-	var playback_speed: float = (
-		ANIM_CLIMB_DURATION
-		/ climb_duration
-	)
-
-
-	climb_anim_player.play(
-		ANIM_CLIMB,
-		-1.0,
-		playback_speed
-	)
-
-
-	var tween: Tween = create_tween()
-
-
-	tween.tween_property(
-		self,
-		"global_position",
-		target_pos,
-		climb_duration
-	)
-
-
-	tween.finished.connect(
-		_on_climb_finished
-	)
-
-
-func _on_climb_finished() -> void:
-	is_climbing = false
-
-	velocity = Vector3.ZERO
-
-	move_and_slide()
-
-	climb_cooldown = 0.5
-
-
-# ============================================================
-# Slide Animations
+# Animation adapters
+#
+# These wrappers preserve Player's existing call sites. The animation
+# decisions and AnimationPlayer references live in PlayerAnimations.
 # ============================================================
 
 func start_slide_animation() -> void:
+	animations.start_slide_animation()
 
-	_slide_exit_playing = false
+func stop_slide_animation(play_exit: bool = true) -> void:
+	animations.stop_slide_animation(play_exit)
 
-
-	# Paramos las animaciones normales para que no
-	# pisen el slide.
-	anim_player.stop()
-	animation_player.stop()
-
-
-	climb_anim_player.play(
-		ANIM_SLIDE_START
-	)
-
-
-func stop_slide_animation(
-	play_exit: bool = true
-) -> void:
-
-	if not play_exit:
-
-		_slide_exit_playing = false
-
-
-		if (
-			climb_anim_player.current_animation
-			== ANIM_SLIDE_START
-			or
-			climb_anim_player.current_animation
-			== ANIM_SLIDE
-			or
-			climb_anim_player.current_animation
-			== ANIM_SLIDE_EXIT
-		):
-			climb_anim_player.stop()
-
-
-		return
-
-
-	# Si ya está haciendo Slide_Exit,
-	# no lo reiniciamos.
-	if (
-		climb_anim_player.current_animation
-		== ANIM_SLIDE_EXIT
-	):
-
-		_slide_exit_playing = true
-		return
-
-
-	if (
-		climb_anim_player.current_animation
-		== ANIM_SLIDE_START
-		or
-		climb_anim_player.current_animation
-		== ANIM_SLIDE
-	):
-
-		_slide_exit_playing = true
-
-
-		climb_anim_player.play(
-			ANIM_SLIDE_EXIT
-		)
-
-
-func _on_action_animation_finished(
-	anim_name: StringName
-) -> void:
-
-	# --------------------------------------------------------
-	# Slide_Start terminó -> Slide loop
-	# --------------------------------------------------------
-
-	if anim_name == ANIM_SLIDE_START:
-
-		var should_continue_slide: bool
-
-
-		if is_multiplayer_authority():
-			should_continue_slide = slide.active
-
-		else:
-			should_continue_slide = _remote_is_sliding
-
-
-		if should_continue_slide:
-
-			climb_anim_player.play(
-				ANIM_SLIDE
-			)
-
-
-		return
-
-
-	# --------------------------------------------------------
-	# Slide_Exit terminó
-	# --------------------------------------------------------
-
-	if anim_name == ANIM_SLIDE_EXIT:
-
-		_slide_exit_playing = false
-
-		return
-
-
-# ============================================================
-# Animation state
-# ============================================================
-
-func update_animations(
-	is_sprinting: bool
-) -> void:
-
-	# SprintAnimation no debe interferir
-	# con Slide ni Slide_Exit.
-	if (
-		slide.active
-		or _slide_exit_playing
-	):
-		animation_player.stop()
-		return
-
-
-	var is_moving: bool = Vector2(
-		velocity.x,
-		velocity.z
-	).length() > 0.2
-
-
-	if (
-		is_sprinting
-		and is_moving
-	):
-		animation_player.play(
-			"SprintAnimation"
-		)
-
-	else:
-		animation_player.stop()
-
+func update_animations(is_sprinting: bool) -> void:
+	animations.update_animations(is_sprinting, velocity, slide.active)
 
 func _update_animation_state(
 	moving: bool,
@@ -1195,165 +757,21 @@ func _update_animation_state(
 	just_landed: bool,
 	on_ledge: bool = false
 ) -> void:
-
-	# --------------------------------------------------------
-	# 1. Climbing
-	# --------------------------------------------------------
-
-	if on_ledge:
-
-		_slide_exit_playing = false
-
-
-		anim_player.stop()
-		animation_player.stop()
+	animations.update_animation_state(
+		moving,
+		on_floor,
+		just_jumped,
+		just_landed,
+		on_ledge,
+		_visual_slide_active()
+	)
 
 
-		if (
-			climb_anim_player.current_animation
-			!= ANIM_CLIMB
-			or not climb_anim_player.is_playing()
-		):
-
-			climb_anim_player.play(
-				ANIM_CLIMB
-			)
-
-
-		return
-
-
-	# --------------------------------------------------------
-	# Slide
-	# --------------------------------------------------------
-
-	var visual_slide_active: bool
-
-
+func _visual_slide_active() -> bool:
 	if is_multiplayer_authority():
-		visual_slide_active = slide.active
+		return slide.active
 
-	else:
-		visual_slide_active = _remote_is_sliding
-
-
-	if (
-		visual_slide_active
-		or _slide_exit_playing
-	):
-
-		anim_player.stop()
-		animation_player.stop()
-
-		return
-
-
-	# --------------------------------------------------------
-	# 2. Landing
-	# --------------------------------------------------------
-
-	if just_landed:
-
-		if moving:
-			play_anim(
-				ANIM_SPRINT
-			)
-
-		else:
-			play_anim(
-				ANIM_JUMP_LAND,
-				LAND_ANIMATION_SPEED
-			)
-
-
-		return
-
-
-	# --------------------------------------------------------
-	# 3. Jump start
-	# --------------------------------------------------------
-
-	if just_jumped:
-		anim_player.stop()
-		play_anim(
-			ANIM_JUMP_START
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# 4. Airborne
-	# --------------------------------------------------------
-
-	if not on_floor:
-
-		if (
-			anim_player.current_animation
-			== ANIM_JUMP_START
-			and anim_player.is_playing()
-		):
-			return
-
-
-		play_anim(
-			ANIM_JUMP_LOOP
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# 5. Ground movement
-	# --------------------------------------------------------
-
-	if moving:
-
-		play_anim(
-			ANIM_SPRINT
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# 6. Finish landing transition
-	# --------------------------------------------------------
-
-	if (
-		anim_player.current_animation
-		== ANIM_JUMP_LAND
-		and anim_player.is_playing()
-	):
-		return
-
-
-	# --------------------------------------------------------
-	# 7. Idle
-	# --------------------------------------------------------
-
-	play_anim(
-		ANIM_IDLE
-	)
-
-
-func play_anim(
-	animation: StringName,
-	speed: float = 1.0
-) -> void:
-
-	if (
-		anim_player.current_animation
-		== animation
-	):
-		return
-
-
-	anim_player.play(
-		animation,
-		-1.0,
-		speed
-	)
+	return _remote_is_sliding
 
 
 # ============================================================
@@ -1362,21 +780,24 @@ func play_anim(
 
 @rpc("any_peer")
 func test() -> void:
-	Debug.log(
-		name,
-		10
-	)
+	Debug.log(name, 10)
+
+# climbing
+
+func _on_climb_started(duration: float) -> void:
+	animations.play_climb(duration)
 
 # ============================================================
 # Extra Speed (Role)
 # ============================================================
+
 func _role_speed_multiplier() -> float:
 	return rapido_speed_multiplier if role == Statics.Role.rapido else 1.0
-	
 
 # ============================================================
-# Double Jump 
+# Double Jump
 # ============================================================
+
 func _max_air_jumps() -> int:
 	return 1 if role == Statics.Role.doble_salto else 0
 
@@ -1385,113 +806,164 @@ func _max_air_jumps() -> int:
 # ============================================================
 
 func _handle_grapple_input() -> void:
-
-	if not Input.is_action_just_pressed(
-		"grapple"
-	):
+	if not Input.is_action_just_pressed("grapple"):
 		return
 
-
-	if (
-		role != Statics.Role.gancho
-		and not grapple.is_pulling()
-	):
-
+	if (role != Statics.Role.gancho and not grapple.is_pulling()):
 		Debug.log(
 			"Rol: %s. El gancho es solo de gancho."
 			% Statics.get_role_name(role)
 		)
-
 		return
-
 
 	if grapple.is_pulling():
 		grapple.cancel()
 		return
 
-
-	if is_climbing:
+	if climb.is_climbing:
 		return
-
 
 	if grapple.is_on_cooldown():
-
-		Debug.log(
-			"Gancho en espera"
-		)
-
+		Debug.log("Gancho en espera")
 		return
 
+	if not grapple.try_launch(role, camera_3d, self):
+		Debug.log("Sin superficie. Apuntá a un bloque o pared.")
 
-	if not grapple.try_launch(
-		role,
-		camera_3d,
-		self
-	):
+# ======================
+# Dash
+# ======================
 
-		Debug.log(
-			"Sin superficie. Apuntá a un bloque o pared."
-		)
+func _handle_dash_input() -> void:
 
+	if not Input.is_action_just_pressed("dash"):
+		return
+
+	# Dash y slide son mutuamente excluyentes.
+	if slide.active:
+		return
+
+	if not dash.try_start(role, self):
+
+		if role != Statics.Role.rapido:
+			Debug.log(
+				"Rol: %s. El dash es solo de rapido."
+				% Statics.get_role_name(role)
+			)
+
+		elif dash.is_on_cooldown():
+			Debug.log("Dash en espera")
+
+# ============================================================
+# Bomb
+# ============================================================
+
+func _handle_bomb_input() -> void:
+
+	if not Input.is_action_just_pressed("bomb"):
+		return
+
+	if bomb.try_launch(role, camera_3d, self):
+		return
+
+	if role != Statics.Role.doble_vida:
+		Debug.log("La bomba es solo del rol doble vida.")
+
+	elif bomb.is_on_cooldown():
+		Debug.log("Bomba en espera")
+
+
+func receive_explosion_impulse(
+	center: Vector3,
+	radius: float,
+	force: float,
+	falloff_exponent: float,
+	center_height: float
+) -> void:
+
+	if not is_multiplayer_authority():
+		return
+
+	var body_center: Vector3 = (global_position + Vector3.UP * center_height)
+	var offset: Vector3 = body_center - center
+	var distance: float = offset.length()
+
+	if distance >= radius:
+		return
+
+	var normalized_distance: float = (distance / radius)
+	var falloff: float = pow(1.0 - normalized_distance, falloff_exponent)
+	var direction: Vector3 = Vector3.UP
+
+	if distance > 0.001:
+		direction = offset / distance
+
+	# Una explosión interrumpe otras habilidades de movimiento.
+	if grapple.is_pulling():
+		grapple.cancel()
+
+	if dash.is_dashing():
+		dash.cancel(self)
+
+	if slide.active:
+		slide.stop()
+		stop_slide_animation()
+
+	var impulse: Vector3 = direction * force * falloff
+
+	# Una sola velocidad física: conserva el momentum existente
+	# y suma el impulso radial en los tres ejes.
+	velocity += impulse
+
+	# Evita que los raycasts interpreten el golpe como una escalada.
+	onledge = false
 
 # ============================================================
 # Player Data
 # ============================================================
 
-func _on_player_data_updated(
-	id: int
-) -> void:
-
+func _on_player_data_updated(id: int) -> void:
 	if id != get_multiplayer_authority():
 		return
-
 
 	var data: Statics.PlayerData = \
 		Game.instance.get_player(id)
 
-
 	if data == null:
 		return
-
 
 	role = data.role
 
 	_refresh_role_label()
 
-
 	if role != Statics.Role.gancho:
 		grapple.cancel()
-
+		
+	if role != Statics.Role.rapido:
+		dash.cancel(self)
 
 # ============================================================
 # Crosshair
 # ============================================================
 
 func _add_crosshair() -> void:
-
 	var layer: CanvasLayer = \
 		CanvasLayer.new()
-
 
 	layer.name = "Crosshair"
 	layer.layer = 20
 
-
 	var root: Control = \
 		Control.new()
-
 
 	root.set_anchors_and_offsets_preset(
 		Control.PRESET_FULL_RECT
 	)
 
-
 	root.mouse_filter = \
 		Control.MOUSE_FILTER_IGNORE
 
-
 	layer.add_child(root)
-
 
 	var color: Color = \
 		Color(
@@ -1500,7 +972,6 @@ func _add_crosshair() -> void:
 			1,
 			0.95
 		)
-
 
 	root.add_child(
 		_crosshair_bar(
@@ -1512,7 +983,6 @@ func _add_crosshair() -> void:
 		)
 	)
 
-
 	root.add_child(
 		_crosshair_bar(
 			color,
@@ -1523,42 +993,27 @@ func _add_crosshair() -> void:
 		)
 	)
 
-
 	add_child(layer)
 
-
-func _crosshair_bar(
-	color: Color,
-	left: float,
-	right: float,
-	top: float,
-	bottom: float
-) -> ColorRect:
-
+func _crosshair_bar(color: Color, left: float, right: float, top: float, bottom: float) -> ColorRect:
 	var bar: ColorRect = \
 		ColorRect.new()
 
-
 	bar.color = color
-
 
 	bar.mouse_filter = \
 		Control.MOUSE_FILTER_IGNORE
 
-
 	bar.set_anchors_preset(
 		Control.PRESET_CENTER
 	)
-
 
 	bar.offset_left = left
 	bar.offset_right = right
 	bar.offset_top = top
 	bar.offset_bottom = bottom
 
-
 	return bar
-
 
 # ============================================================
 # Tag HUD
@@ -1570,49 +1025,25 @@ func _add_tag_hud() -> void:
 	add_child(hud)
 	hud.setup(TagGame)
 
-
 # ============================================================
 # Tag
 # ============================================================
 
-func _on_tag_zone_body_entered(
-	body: Node3D
-) -> void:
-
+func _on_tag_zone_body_entered(body: Node3D) -> void:
 	if not is_multiplayer_authority():
 		return
 
-
-	if (
-		TagGame.it_player_id
-		!= get_multiplayer_authority()
-	):
+	if (TagGame.it_player_id != get_multiplayer_authority()):
 		return
 
-
-	if (
-		body == self
-		or not body is Player
-	):
+	if (body == self or not body is Player):
 		return
 
+	TagGame.request_tag.rpc_id(1, body.get_multiplayer_authority())
 
-	TagGame.request_tag.rpc_id(
-		1,
-		body.get_multiplayer_authority()
-	)
-
-
-func _on_player_exploded(
-	player_id: int
-) -> void:
-
-	if (
-		player_id
-		!= get_multiplayer_authority()
-	):
+func _on_player_exploded(player_id: int) -> void:
+	if (player_id != get_multiplayer_authority()):
 		return
-
 
 	set_physics_process(false)
 	set_process(false)
@@ -1646,10 +1077,8 @@ func _on_player_exploded(
 # ============================================================
 
 func _refresh_role_label() -> void:
-
 	var role_name: String = \
 		Statics.get_role_name(role)
-
 
 	label_3d.text = (
 		"%s · %s"
@@ -1659,15 +1088,12 @@ func _refresh_role_label() -> void:
 		]
 	)
 
-
 	if is_multiplayer_authority():
-
-		Game.instance.player_id.text = (
-			"Rol: %s"
-			% role_name
-		)
-
+		Game.instance.player_id.text = ("Rol: %s" % role_name)
 		Game.instance.player_id.show()
+	
+	if _dash_hud:
+		_dash_hud.visible = (role == Statics.Role.rapido)
 
 
 # ============================================================
@@ -1741,16 +1167,4 @@ func present_on_podium(player_name: String, is_winner: bool) -> void:
 	label_3d.modulate = Color(1.0, 0.86, 0.35) if is_winner else Color(0.78, 0.8, 0.84)
 	label_3d.font_size = 48
 
-	climb_anim_player.stop()
-	animation_player.stop()
-	anim_player.play(ANIM_DANCE if is_winner else ANIM_DEATH)
-
-	if not is_winner and not anim_player.animation_finished.is_connected(_hold_defeat_pose):
-		anim_player.animation_finished.connect(_hold_defeat_pose)
-
-
-func _hold_defeat_pose(anim_name: StringName) -> void:
-	if anim_name != ANIM_DEATH:
-		return
-	anim_player.seek(anim_player.current_animation_length, true)
-	anim_player.pause()
+	animations.play_podium(is_winner)

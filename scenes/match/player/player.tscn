@@ -5,6 +5,11 @@
 [ext_resource type="PackedScene" uid="uid://d2ei87j7hxl13" path="res://models/UAL2_Standard.glb" id="3_wvbbu"]
 [ext_resource type="Script" uid="uid://cq7n4grapple1" path="res://player/grapple_hook.gd" id="4_hook"]
 [ext_resource type="Script" uid="uid://dgg78avaosu8g" path="res://player/slide_controller.gd" id="5_3v1qs"]
+[ext_resource type="Script" uid="uid://uae70pcek3qt" path="res://player/dash.gd" id="6_t0itt"]
+[ext_resource type="Script" uid="uid://hp7vgvnqmecp" path="res://player/bomb_controller.gd" id="7_v6p70"]
+[ext_resource type="PackedScene" uid="uid://duvu5trbhoj2q" path="res://scenes/match/player/bomb_projectile.tscn" id="8_sy86b"]
+[ext_resource type="Script" uid="uid://b4h2s7cam4i0l" path="res://player/player_animations.gd" id="9_omcdu"]
+[ext_resource type="Script" uid="uid://bkj4feqlqq337" path="res://player/climb_controller.gd" id="10_q5dri"]
 
 [sub_resource type="Animation" id="Animation_ne2ju"]
 resource_name = "mixamo_com"
@@ -17476,21 +17481,26 @@ _data = {
 
 [node name="Player" type="CharacterBody3D" unique_id=1817994250]
 script = ExtResource("1_s3mhm")
+ground_acceleration = 200.0
+ground_deceleration = 200.0
+air_acceleration = 50.0
+air_drag = 1.0
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=165174125]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6179214, 0)
 
 [node name="SpringArm3D" type="SpringArm3D" parent="CameraPivot" unique_id=1192432023]
-transform = Transform3D(1, 0, 0, 0, 0.99994516, -0.010471784, 0, 0.010471784, 0.99994516, 0, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 0.99994516, -0.010471784, 0, 0.010471784, 0.99994516, -1, 1.5, 0)
 spring_length = 4.0
+margin = 0.25
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D" unique_id=817527026]
 transform = Transform3D(1, 0, 0, 0, 0.99994516, -0.010471784, 0, 0.010471784, 0.99994516, 0, 0.2677858, 3.3990493)
 
 [node name="UAL2_Standard" parent="." unique_id=190529878 instance=ExtResource("2_qqgw4")]
-transform = Transform3D(-0.9979156, -0.016702205, -0.062333487, 0, 0.96592563, -0.25881904, 0.06453238, -0.2582795, -0.9639125, 0, 0.3, 0)
+transform = Transform3D(-0.9979156, -0.016702201, -0.062333487, 0, 0.9659254, -0.25881904, 0.06453238, -0.25827944, -0.9639125, 0, 0.3, 0)
 
-[node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 85218198) index="0" unique_id=2121876374]
+[node name="Skeleton3D" parent="UAL2_Standard/Armature" parent_id_path=PackedInt32Array(190529878, 517251081) index="0" unique_id=222012580]
 bones/1/position = Vector3(0.052163642, 0.6139999, -0.08217772)
 bones/1/rotation = Quaternion(-0.00870193, -0.38121206, 0.044703707, 0.92336524)
 bones/3/rotation = Quaternion(-0.02223116, -0.026652904, 0.0134764435, 0.99930674)
@@ -17548,7 +17558,7 @@ bones/61/rotation = Quaternion(0.47708896, 0.29732254, -0.15193303, 0.8129588)
 bones/62/rotation = Quaternion(-0.65246797, -0.05858932, -0.12165084, 0.7456903)
 bones/63/rotation = Quaternion(0.000137094, 0.9643046, -0.26479498, 0.0004995797)
 
-[node name="AnimationPlayer" parent="UAL2_Standard" index="1" unique_id=2067861146]
+[node name="AnimationPlayer" parent="UAL2_Standard" index="1" unique_id=1994866662]
 "libraries/Sprint To Wall Climb" = SubResource("AnimationLibrary_3v1qs")
 
 [node name="AnimationPlayer2" type="AnimationPlayer" parent="UAL2_Standard" unique_id=68426989]
@@ -17589,5 +17599,25 @@ shape = SubResource("CapsuleShape3D_g4v7s")
 script = ExtResource("5_3v1qs")
 min_slide_speed = 1.0
 metadata/_custom_type_script = "uid://dgg78avaosu8g"
+
+[node name="Dash" type="Node" parent="." unique_id=1269636484]
+script = ExtResource("6_t0itt")
+speed = 100.0
+
+[node name="BombController" type="Node" parent="." unique_id=996806675]
+script = ExtResource("7_v6p70")
+projectile_scene = ExtResource("8_sy86b")
+launch_speed = 80.0
+cooldown = 1.0
+spawn_height = 3.0
+blast_radius = 50.0
+blast_force = 40.0
+falloff_exponent = 1.5
+
+[node name="PlayerAnimations" type="Node" parent="." unique_id=1489807843]
+script = ExtResource("9_omcdu")
+
+[node name="ClimbController" type="Node" parent="." unique_id=516365429]
+script = ExtResource("10_q5dri")
 
 [editable path="UAL2_Standard"]

@@ -2,6 +2,7 @@ extends Node
 
 
 var player_index: int = 1
+const TEST_LEVEL_INDEX := 2
 
 @onready var start_game_timer: Timer = $StartGameTimer
 
@@ -70,9 +71,9 @@ func _send_player_data_id(index: int, id: int) -> void:
 func _on_start_game_timeout() -> void:
 	_start_game.rpc()
 
-
 @rpc("reliable", "call_local")
 func _start_game() -> void:
+	LevelManager.set_level_index(TEST_LEVEL_INDEX)
 	get_tree().change_scene_to_file(Statics.ARENA_SCENE_PATH)
 
 

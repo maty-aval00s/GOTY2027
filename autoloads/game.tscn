@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c8lsyb801m532" path="res://autoloads/game.gd" id="1_fmbhi"]
 [ext_resource type="Script" uid="uid://bnqpng0o60r43" path="res://scripts/player_data_resource.gd" id="2_xaonh"]
-[ext_resource type="PackedScene" uid="uid://cft5q85xb0epd" path="res://scenes/match/match.tscn" id="3_du0e2"]
+[ext_resource type="PackedScene" uid="uid://cotmci4y8vupf" path="res://scenes/match/levels/islands/islands.tscn" id="3_du0e2"]
 
 [sub_resource type="Resource" id="Resource_nviqh"]
 script = ExtResource("2_xaonh")
@@ -16,10 +16,10 @@ role = 2
 
 [node name="Game" type="Node" unique_id=369504755]
 script = ExtResource("1_fmbhi")
-multiplayer_test = false
+multiplayer_test = true
 unique_roles = false
 all_roles = false
-test_players = Array[ExtResource("2_xaonh")]([SubResource("Resource_nviqh"), SubResource("Resource_ckjww")])
+test_players = [SubResource("Resource_nviqh"), SubResource("Resource_ckjww")]
 main_scene = ExtResource("3_du0e2")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1737081465]

@@ -31,4 +31,4 @@ func _host() -> void:
 	Game.instance.add_player(Statics.PlayerData.new(multiplayer.get_unique_id(), player_name.text, 0))
 	Debug.add_to_window_title("Server")
 	Game.instance.update_player_id()
-	get_tree().change_scene_to_file("res://lobby/waiting_screen.tscn")
+	get_tree().change_scene_to_file("res://scenes/lobby/waiting_screen.tscn")

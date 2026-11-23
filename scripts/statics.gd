@@ -4,6 +4,7 @@ extends Node
 
 const MAX_CLIENTS: int = 3
 const PORT: int = 5409 # Number between 1024 and 65535.
+
 ## Shared match shell; LevelManager picks the level geometry.
 const ARENA_SCENE_PATH: String = "res://scenes/match/match.tscn"
 
@@ -39,6 +40,7 @@ class PlayerData:
 	var index: int = -1
 	var role: Role
 	var vote: bool = false
+	var inst: Player
 	
 	func _init(new_id: int, new_name: String, new_index: int = -1, new_role: Role = Role.NONE) -> void:
 		id = new_id

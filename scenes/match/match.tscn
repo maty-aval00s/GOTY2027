@@ -19,37 +19,37 @@ ambient_light_color = Color(0.75, 0.78, 0.82, 1)
 ambient_light_energy = 0.55
 glow_enabled = true
 
-[node name="Match" type="Node3D"]
+[node name="Match" type="Node3D" unique_id=18978277]
 script = ExtResource("1_klj7n")
 player_scene = ExtResource("2_lr5j1")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=169646184]
 environment = SubResource("Environment_gaudv")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=570179973]
 transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 28, 0)
-shadow_enabled = true
 light_energy = 1.15
+shadow_enabled = true
 
-[node name="FillLight" type="OmniLight3D" parent="."]
+[node name="FillLight" type="OmniLight3D" parent="." unique_id=1913411561]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12, 0)
 light_energy = 0.35
 omni_range = 55.0
 
-[node name="LevelRoot" type="Node3D" parent="."]
+[node name="LevelRoot" type="Node3D" parent="." unique_id=1888875994]
 
-[node name="SpawnPoints" type="Node3D" parent="."]
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=190277348]
 
-[node name="Spawn0" type="Marker3D" parent="SpawnPoints"]
+[node name="Spawn0" type="Marker3D" parent="SpawnPoints" unique_id=1030658937]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0.1, 24)
 
-[node name="Spawn1" type="Marker3D" parent="SpawnPoints"]
+[node name="Spawn1" type="Marker3D" parent="SpawnPoints" unique_id=1223277972]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0.1, 24)
 
-[node name="Spawn2" type="Marker3D" parent="SpawnPoints"]
+[node name="Spawn2" type="Marker3D" parent="SpawnPoints" unique_id=26137644]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0.1, -24)
 
-[node name="Spawn3" type="Marker3D" parent="SpawnPoints"]
+[node name="Spawn3" type="Marker3D" parent="SpawnPoints" unique_id=313982989]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0.1, -24)
 
-[node name="Players" type="Node3D" parent="."]
+[node name="Players" type="Node3D" parent="." unique_id=1136482187]

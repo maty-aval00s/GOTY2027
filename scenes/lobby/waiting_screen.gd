@@ -19,8 +19,10 @@ const MATCH_SCENE_PATH: String = "res://scenes/match/match.tscn"
 @onready var map_container: PanelContainer = %MapContainer
 @onready var map_list: VBoxContainer = %MapList
 
-var LOBBY_PLAYER_SCENE: PackedScene = preload("res://lobby/lobby_player.tscn")
+
+var LOBBY_PLAYER_SCENE: PackedScene = preload("res://scenes/lobby/lobby_player.tscn")
 var _launching: bool = false
+
 
 
 func _ready() -> void:
@@ -188,11 +190,13 @@ func _on_start_timer_timeout() -> void:
 
 
 @rpc("reliable", "call_local")
+
 func _start_game(level_index: int) -> void:
 	_launching = true
 	start_timer.stop()
 	LevelManager.set_level_index(level_index)
 	get_tree().change_scene_to_file(MATCH_SCENE_PATH)
+
 
 
 func _can_start_game() -> bool:

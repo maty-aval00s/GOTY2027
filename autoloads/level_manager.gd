@@ -7,11 +7,15 @@ signal level_changed(index: int)
 const LEVEL_PATHS: PackedStringArray = [
 	"res://scenes/match/levels/parkour1.tscn",
 	"res://scenes/match/levels/parkour2.tscn",
+	"res://scenes/match/levels/islands/islands.tscn",
+	"res://scenes/match/levels/fortress/fortress.tscn",
 ]
 
 const LEVEL_NAMES: PackedStringArray = [
 	"Parkour 1 - Courtyard",
 	"Parkour 2 - High Spire",
+	"Sky islands",
+	"Fortress",
 ]
 
 var current_level_index: int = 0
