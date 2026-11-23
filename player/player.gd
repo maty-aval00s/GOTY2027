@@ -1,0 +1,1170 @@
+class_name Player
+extends CharacterBody3D
+
+
+# ============================================================
+# Movement
+# ============================================================
+
+@export var max_move_speed: float = 14.0
+@export var rapido_speed_multiplier: float = 1.25
+@export var move_speed: float = 14.0
+@export var jump_speed: float = 15.0
+
+# Ground movement responds quickly, but does not snap instantly.
+@export var ground_acceleration: float = 70.0
+@export var ground_deceleration: float = 55.0
+
+# Air movement adds steering acceleration without deleting momentum.
+@export var air_acceleration: float = 24.0
+@export var air_drag: float = 0.20
+
+@export var double_jump_speed: float = 13.0
+
+@export var gravity_multiplier: float = 3.0
+@export var fall_gravity_multiplier: float = 4.5
+
+# Smoothing speed for remote players over the network
+@export var position_interpolate_speed: float = 20.0
+
+
+# ============================================================
+# Camera
+# ============================================================
+
+@export var mouse_sensitivity: float = 0.003
+
+@export var min_pitch: float = -80.0
+@export var max_pitch: float = 80.0
+
+# Higher = camera recenters faster after releasing Alt.
+@export var free_look_recenter_speed: float = 8.0
+
+@export var min_camera_distance: float = 3.2
+
+# ============================================================
+# Nodes
+# ============================================================
+
+@onready var camera_pivot: Node3D = $CameraPivot
+@onready var spring_arm: SpringArm3D = $CameraPivot/SpringArm3D
+@onready var camera_3d: Camera3D = \
+	$CameraPivot/SpringArm3D/Camera3D
+
+@onready var label_3d: Label3D = $Label3D
+
+# Raycasts
+@onready var ray_01: RayCast3D = $Ray1
+@onready var ray_02: RayCast3D = $Ray2
+
+# Controllers
+@onready var grapple: GrappleHook = $GrappleHook
+@onready var slide: SlideController = $SlideController
+@onready var dash: DashController = $Dash
+@onready var bomb: BombController = $BombController
+@onready var climb: ClimbController = $ClimbController
+
+
+@onready var tag_zone: Area3D = $TagZone
+@onready var animations: PlayerAnimations = \
+	$PlayerAnimations
+
+# ===================
+# hud
+# ===================
+const DASH_HUD_SCENE := preload(
+	"res://ui/hud/dash_hud.tscn"
+)
+var _dash_hud: DashHud
+
+# This changes movement speed, so it stays in Player instead of the
+# animation controller.
+const SPRINT_SPEED_MULTIPLIER: float = 1.5
+
+# ============================================================
+# Camera & Interpolation state
+# ============================================================
+
+var base_camera_pitch: float = 0.0
+
+var free_look_yaw: float = 0.0
+var free_look_pitch: float = 0.0
+
+var camera_center_yaw: float = 0.0
+var camera_center_roll: float = 0.0
+
+# ============================================================
+# Network Targets
+# ============================================================
+
+var _target_position: Vector3 = Vector3.ZERO
+var _target_rotation: Vector3 = Vector3.ZERO
+
+# ============================================================
+# Remote state
+# ============================================================
+var _remote_is_on_floor: bool = true
+var _remote_was_on_floor: bool = true
+
+var _prev_position: Vector3 = Vector3.ZERO
+var _remote_velocity: Vector3 = Vector3.ZERO
+
+var _remote_just_jumped: bool = false
+var _remote_onledge: bool = false
+
+var _remote_grapple_visible: bool = false
+var _remote_grapple_point: Vector3 = Vector3.ZERO
+
+var _remote_is_sliding: bool = false
+var _remote_was_sliding: bool = false
+
+# ============================================================
+# Player state
+# ============================================================
+var onledge: bool = false
+var air_jumps_left: int = 0
+
+var last_floor_y: float = 0.0
+
+var role: Statics.Role = Statics.Role.NONE
+
+var podium_mode: bool = false
+
+var _player_name: String = ""
+var _tag_timer_label: Label
+
+# ============================================================
+# Initialization
+# ============================================================
+func _ready() -> void:
+	if podium_mode:
+		set_physics_process(false)
+		set_process(false)
+		set_process_input(false)
+		camera_3d.current = false
+		return
+
+	process_priority = 1
+
+	add_to_group("players")
+
+	spring_arm.add_excluded_object(get_rid())
+
+	_prev_position = global_position
+	_target_position = global_position
+	_target_rotation = global_rotation
+
+	base_camera_pitch = camera_pivot.rotation.x
+	camera_center_yaw = camera_pivot.rotation.y
+	camera_center_roll = camera_pivot.rotation.z
+
+	_apply_camera_rotation()
+
+	tag_zone.body_entered.connect(_on_tag_zone_body_entered)
+	TagGame.player_exploded.connect(_on_player_exploded)
+	
+	# event handlers
+	climb.climb_started.connect(_on_climb_started)
+
+func _add_dash_hud() -> void:
+	_dash_hud = DASH_HUD_SCENE.instantiate()
+	add_child(_dash_hud)
+	_dash_hud.bind(dash)
+	_dash_hud.visible = (role == Statics.Role.rapido)
+
+	TagGame.life_lost.connect(func(id: int) -> void:
+		if id == get_multiplayer_authority():
+			Debug.log("¡Usaste tu vida extra!", 4.0)
+
+		)
+	add_to_group("players")
+	
+
+func setup(player_data: Statics.PlayerData) -> void:
+	_player_name = player_data.name
+	role = player_data.role
+
+	if not Game.instance.player_updated.is_connected(_on_player_data_updated):
+		Game.instance.player_updated.connect(_on_player_data_updated)
+
+	set_multiplayer_authority(player_data.id)
+	_refresh_role_label()
+	camera_3d.current = is_multiplayer_authority()
+
+	if is_multiplayer_authority():
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+		_add_crosshair()
+		_add_tag_hud()
+		_add_dash_hud()
+
+		Debug.log(
+			"Rol: %s" % Statics.get_role_name(role),
+			6.0
+		)
+
+# ============================================================
+# Input
+# ============================================================
+func _input(event: InputEvent) -> void:
+	if not is_multiplayer_authority():
+		return
+
+	if event.is_action_pressed("test"):
+		test.rpc()
+
+	# --------------------------------------------------------
+	# Mouse movement
+	# --------------------------------------------------------
+	if event is InputEventMouseMotion:
+		var mouse_yaw: float = -event.relative.x * mouse_sensitivity
+
+		var mouse_pitch: float = -event.relative.y * mouse_sensitivity
+
+		var free_look_active: bool = \
+			Input.is_key_pressed(KEY_ALT)
+
+		if free_look_active:
+			# ALT HELD
+			free_look_yaw += mouse_yaw
+
+			free_look_yaw = wrapf(free_look_yaw, -PI, PI)
+
+			var desired_pitch: float = (
+				base_camera_pitch
+				+ free_look_pitch
+				+ mouse_pitch
+			)
+
+			desired_pitch = clamp(
+				desired_pitch,
+				deg_to_rad(min_pitch),
+				deg_to_rad(max_pitch)
+			)
+
+			free_look_pitch = (desired_pitch - base_camera_pitch)
+
+		else:
+			# Normal third-person camera
+			rotate_y(mouse_yaw)
+			base_camera_pitch += mouse_pitch
+			base_camera_pitch = clamp(
+				base_camera_pitch,
+				deg_to_rad(min_pitch),
+				deg_to_rad(max_pitch)
+			)
+
+		_apply_camera_rotation()
+
+# ============================================================
+# Visual Process
+# ============================================================
+
+func _process(delta: float) -> void:
+	# Remote Player Visual Interpolation
+	if not is_multiplayer_authority():
+		global_position = global_position.lerp(
+			_target_position,
+			position_interpolate_speed * delta
+		)
+
+		global_rotation.y = lerp_angle(
+			global_rotation.y,
+			_target_rotation.y,
+			position_interpolate_speed * delta
+		)
+
+		grapple.show_synced(
+			grapple.origin_from(self),
+			_remote_grapple_visible,
+			_remote_grapple_point
+		)
+
+		return
+
+	# --------------------------------------------------------
+	# Authority Camera Recenter
+	# --------------------------------------------------------
+
+	grapple.draw(grapple.origin_from(self))
+
+	if _tag_timer_label:
+		if (TagGame.game_active and TagGame.it_player_id == get_multiplayer_authority()):
+			_tag_timer_label.visible = true
+			_tag_timer_label.text = str(
+				int(TagGame.time_left)
+			)
+
+		else:
+			_tag_timer_label.visible = false
+
+	if Input.is_key_pressed(KEY_ALT):
+		return
+
+	var weight: float = (
+		1.0
+		- exp(
+			-free_look_recenter_speed
+			* delta
+		)
+	)
+
+	free_look_yaw = lerp_angle(
+		free_look_yaw,
+		0.0,
+		weight
+	)
+
+	free_look_pitch = lerp(
+		free_look_pitch,
+		0.0,
+		weight
+	)
+
+	if abs(free_look_yaw) < 0.0001:
+		free_look_yaw = 0.0
+
+	if abs(free_look_pitch) < 0.0001:
+		free_look_pitch = 0.0
+
+	_apply_camera_rotation()
+	#_keep_camera_back()
+
+func _keep_camera_back() -> void:
+	var cam_pos: Vector3 = camera_3d.position
+
+	if cam_pos.z >= min_camera_distance:
+		return
+
+	cam_pos.z = min_camera_distance
+	camera_3d.position = cam_pos
+
+func _apply_camera_rotation() -> void:
+	camera_pivot.rotation = Vector3(
+		base_camera_pitch + free_look_pitch,
+		camera_center_yaw + free_look_yaw,
+		camera_center_roll
+	)
+
+# ============================================================
+# Physics
+# ============================================================
+
+func _physics_process(delta: float) -> void:
+
+	# ========================================================
+	# REMOTE PLAYER
+	# ========================================================
+
+	if not is_multiplayer_authority():
+
+		if delta > 0.0:
+			_remote_velocity = (
+				_target_position
+				- _prev_position
+			) / delta
+
+			_prev_position = _target_position
+
+		var is_moving: bool = Vector2(
+			_remote_velocity.x,
+			_remote_velocity.z
+		).length() > 0.2
+
+		var just_landed: bool = (
+			not _remote_was_on_floor
+			and _remote_is_on_floor
+		)
+
+		var just_jumped: bool = \
+			_remote_just_jumped
+
+		_remote_just_jumped = false
+		_remote_was_on_floor = _remote_is_on_floor
+
+		# ----------------------------------------------------
+		# Remote slide animation state
+		# ----------------------------------------------------
+
+		if _remote_is_sliding != _remote_was_sliding:
+
+			if _remote_is_sliding:
+				start_slide_animation()
+
+			else:
+				stop_slide_animation()
+
+		_remote_was_sliding = _remote_is_sliding
+
+		_update_animation_state(
+			is_moving,
+			_remote_is_on_floor,
+			just_jumped,
+			just_landed,
+			_remote_onledge
+		)
+
+		return
+
+	# ========================================================
+	# LOCAL PLAYER
+	# ========================================================
+
+	var was_on_floor: bool = is_on_floor()
+	var just_jumped: bool = false
+
+	# --------------------------------------------------------
+	# General updates
+	# --------------------------------------------------------
+
+	raycast_detect_ledge()
+
+	grapple.tick_cooldown(delta)
+		
+	grapple.tick_retract(
+		grapple.origin_from(self),
+		delta
+	)
+
+	slide.tick_cooldown(delta)
+	dash.tick(delta)
+	bomb.tick(delta)
+
+	# --------------------------------------------------------
+	# Climbing
+	# --------------------------------------------------------
+
+	if climb.is_climbing:
+		if slide.active:
+			slide.stop()
+
+			# No hacemos Slide_Exit porque inmediatamente
+			# entra la animación de climb.
+			stop_slide_animation(false)
+
+		grapple.cancel()
+		velocity = Vector3.ZERO
+		_update_animation_state(false, is_on_floor(), false, false, climb.is_climbing)
+		_send_state(false, climb.is_climbing)
+
+		return
+
+	# --------------------------------------------------------
+	# Grapple input
+	# --------------------------------------------------------
+
+	_handle_grapple_input()
+	_handle_dash_input()
+	_handle_bomb_input()
+
+	# --------------------------------------------------------
+	# Grapple movement
+	# --------------------------------------------------------
+
+	if grapple.is_pulling():
+		if slide.active:
+			slide.stop()
+			# Grapple toma prioridad.
+			stop_slide_animation(false)
+
+		if grapple.advance_pull(self, delta):
+			move_and_slide()
+			var grapple_moving: bool = Vector2(velocity.x, velocity.z).length() > 0.2
+			_update_animation_state(grapple_moving, is_on_floor(), false, false, false)
+			_send_state(false, false)
+
+			return
+
+	# --------------------------------------------------------
+	# Ledge / climb
+	# --------------------------------------------------------
+
+	if (onledge and climb.cooldown_left <= 0.0):
+		if slide.active:
+			slide.stop()
+			stop_slide_animation(false)
+
+		climb.start_climb(self, ledge_point)
+		_update_animation_state(false, is_on_floor(), false, false, climb.is_climbing)
+		_send_state(false, climb.is_climbing)
+		return
+
+	else:
+		climb.cooldown_left = maxf(climb.cooldown_left - delta, 0.0)
+		
+		if is_on_floor():
+			last_floor_y = global_position.y
+
+		if not is_on_floor():
+			if velocity.y < 0.0:
+				velocity += (
+					get_gravity()
+					* fall_gravity_multiplier
+					* delta
+				)
+
+			else:
+				velocity += (
+					get_gravity()
+					* gravity_multiplier
+					* delta
+				)
+
+
+	# --------------------------------------------------------
+	# Jump
+	# --------------------------------------------------------
+
+	if is_on_floor():
+		air_jumps_left = _max_air_jumps()
+
+	if Input.is_action_just_pressed("jump"):
+		if is_on_floor():
+			if slide.active:
+				slide.stop()
+				stop_slide_animation(false)
+
+			velocity.y = jump_speed
+			just_jumped = true
+
+		elif air_jumps_left > 0:
+			air_jumps_left -= 1
+			velocity.y = double_jump_speed
+			just_jumped = true
+
+
+	# --------------------------------------------------------
+	# Slide start
+	# --------------------------------------------------------
+
+	if (Input.is_action_just_pressed("crouch") and not dash.is_dashing()):
+		if slide.can_start(self):
+			slide.start(self)
+			start_slide_animation()
+
+
+	# --------------------------------------------------------
+	# Slide update
+	# --------------------------------------------------------
+
+	if slide.active:
+		if not Input.is_action_pressed("crouch"):
+			slide.stop()
+			stop_slide_animation()
+
+		else:
+			var was_sliding: bool = slide.active
+
+			slide.tick(self, delta)
+
+			# SlideController puede terminar por tiempo
+			# o por falta de velocidad.
+			if (was_sliding and not slide.active):
+				stop_slide_animation()
+
+
+	# --------------------------------------------------------
+	# Slide movement
+	# --------------------------------------------------------
+
+	if slide.active:
+		move_and_slide()
+
+		# No llamamos _update_animation_state aquí.
+		# De lo contrario Sprint/Idle pisarían Slide.
+		_send_state(
+			false,
+			false
+		)
+		return
+
+	# --------------
+	# Dash
+	# --------------
+	if dash.advance(self, delta):
+		move_and_slide()
+		_update_animation_state(
+			true,
+			is_on_floor(),
+			false,
+			false,
+			false
+		)
+		_send_state(false, false)
+		return
+
+
+	# --------------------------------------------------------
+	# Normal Movement
+	# --------------------------------------------------------
+
+	var move_input: Vector2 = Input.get_vector(
+		"move_left",
+		"move_right",
+		"move_forward",
+		"move_backward"
+	)
+
+
+	var direction: Vector3 = (
+		transform.basis
+		* Vector3(
+			move_input.x,
+			0.0,
+			move_input.y
+		)
+	)
+
+
+	# --------------------------------------------------------
+	# Sprint
+	# --------------------------------------------------------
+
+	var is_sprinting: bool = \
+		Input.is_action_pressed("sprint")
+
+	if is_sprinting:
+		move_speed = (
+			max_move_speed
+			* SPRINT_SPEED_MULTIPLIER
+			* _role_speed_multiplier()
+		)
+
+	else:
+		move_speed = (
+			max_move_speed
+			* _role_speed_multiplier()
+		)
+
+	# --------------------------------------------------------
+	# Horizontal movement
+	# --------------------------------------------------------
+
+	var horizontal_velocity: Vector2 = Vector2(velocity.x, velocity.z)
+	var result: Vector2 = horizontal_velocity
+
+	if is_on_floor():
+		var target: Vector2 = Vector2(
+			direction.x,
+			direction.z
+		) * move_speed
+
+		var ground_rate: float = (
+			ground_acceleration
+			if move_input.length_squared() > 0.01
+			else ground_deceleration
+		)
+
+		result = horizontal_velocity.move_toward(
+			target,
+			ground_rate * delta
+		)
+
+	else:
+		# Drag suave y continuo. No borra un impulso de golpe.
+		result *= exp(-air_drag * delta)
+
+		var input_strength: float = minf(move_input.length(), 1.0)
+
+		if input_strength > 0.001:
+
+			var wish_direction: Vector2 = Vector2(direction.x, direction.z).normalized()
+			var wish_speed: float = move_speed * input_strength
+
+			# Solo agrega aceleración en la dirección elegida.
+			# Presionar en contra reduce el momentum gradualmente;
+			# presionar a favor no limita un impulso más rápido.
+			var current_along_wish: float = result.dot(wish_direction)
+			var speed_to_add: float = wish_speed - current_along_wish
+			if speed_to_add > 0.0:
+				var acceleration_step: float = minf(
+					speed_to_add,
+					air_acceleration * delta
+				)
+				result += (wish_direction * acceleration_step)
+
+	velocity.x = result.x
+	velocity.z = result.y
+
+
+	# --------------------------------------------------------
+	# Move
+	# --------------------------------------------------------
+
+	move_and_slide()
+	update_animations(is_sprinting)
+
+	# --------------------------------------------------------
+	# Landing & Animation detection
+	# --------------------------------------------------------
+
+	var just_landed: bool = (not was_on_floor and is_on_floor())
+	var moving: bool = (move_input.length_squared() > 0.01)
+	var on_floor: bool = is_on_floor()
+
+	_update_animation_state(
+		moving,
+		on_floor,
+		just_jumped,
+		just_landed,
+		onledge
+	)
+
+	# --------------------------------------------------------
+	# Network Sync
+	# --------------------------------------------------------
+
+	_send_state(
+		just_jumped,
+		onledge
+	)
+
+# ============================================================
+# Ledge / Obstacle Detection
+# ============================================================
+
+var ledge_point: Vector3 = Vector3.ZERO
+
+func raycast_detect_ledge() -> bool:
+	onledge = (ray_01.is_colliding() and not ray_02.is_colliding())
+	if onledge:
+		ledge_point = \
+			ray_01.get_collision_point()
+
+	return onledge
+
+
+# ============================================================
+# Animation adapters
+#
+# These wrappers preserve Player's existing call sites. The animation
+# decisions and AnimationPlayer references live in PlayerAnimations.
+# ============================================================
+
+func start_slide_animation() -> void:
+	animations.start_slide_animation()
+
+func stop_slide_animation(play_exit: bool = true) -> void:
+	animations.stop_slide_animation(play_exit)
+
+func update_animations(is_sprinting: bool) -> void:
+	animations.update_animations(is_sprinting, velocity, slide.active)
+
+func _update_animation_state(
+	moving: bool,
+	on_floor: bool,
+	just_jumped: bool,
+	just_landed: bool,
+	on_ledge: bool = false
+) -> void:
+	animations.update_animation_state(
+		moving,
+		on_floor,
+		just_jumped,
+		just_landed,
+		on_ledge,
+		_visual_slide_active()
+	)
+
+
+func _visual_slide_active() -> bool:
+	if is_multiplayer_authority():
+		return slide.active
+
+	return _remote_is_sliding
+
+
+# ============================================================
+# RPCs
+# ============================================================
+
+@rpc("any_peer")
+func test() -> void:
+	Debug.log(name, 10)
+
+# climbing
+
+func _on_climb_started(duration: float) -> void:
+	animations.play_climb(duration)
+
+# ============================================================
+# Extra Speed (Role)
+# ============================================================
+
+func _role_speed_multiplier() -> float:
+	return rapido_speed_multiplier if role == Statics.Role.rapido else 1.0
+
+# ============================================================
+# Double Jump
+# ============================================================
+
+func _max_air_jumps() -> int:
+	return 1 if role == Statics.Role.doble_salto else 0
+
+# ============================================================
+# Grapple
+# ============================================================
+
+func _handle_grapple_input() -> void:
+	if not Input.is_action_just_pressed("grapple"):
+		return
+
+	if (role != Statics.Role.gancho and not grapple.is_pulling()):
+		Debug.log(
+			"Rol: %s. El gancho es solo de gancho."
+			% Statics.get_role_name(role)
+		)
+		return
+
+	if grapple.is_pulling():
+		grapple.cancel()
+		return
+
+	if climb.is_climbing:
+		return
+
+	if grapple.is_on_cooldown():
+		Debug.log("Gancho en espera")
+		return
+
+	if not grapple.try_launch(role, camera_3d, self):
+		Debug.log("Sin superficie. Apuntá a un bloque o pared.")
+
+# ======================
+# Dash
+# ======================
+
+func _handle_dash_input() -> void:
+
+	if not Input.is_action_just_pressed("dash"):
+		return
+
+	# Dash y slide son mutuamente excluyentes.
+	if slide.active:
+		return
+
+	if not dash.try_start(role, self):
+
+		if role != Statics.Role.rapido:
+			Debug.log(
+				"Rol: %s. El dash es solo de rapido."
+				% Statics.get_role_name(role)
+			)
+
+		elif dash.is_on_cooldown():
+			Debug.log("Dash en espera")
+
+# ============================================================
+# Bomb
+# ============================================================
+
+func _handle_bomb_input() -> void:
+
+	if not Input.is_action_just_pressed("bomb"):
+		return
+
+	if bomb.try_launch(role, camera_3d, self):
+		return
+
+	if role != Statics.Role.doble_vida:
+		Debug.log("La bomba es solo del rol doble vida.")
+
+	elif bomb.is_on_cooldown():
+		Debug.log("Bomba en espera")
+
+
+func receive_explosion_impulse(
+	center: Vector3,
+	radius: float,
+	force: float,
+	falloff_exponent: float,
+	center_height: float
+) -> void:
+
+	if not is_multiplayer_authority():
+		return
+
+	var body_center: Vector3 = (global_position + Vector3.UP * center_height)
+	var offset: Vector3 = body_center - center
+	var distance: float = offset.length()
+
+	if distance >= radius:
+		return
+
+	var normalized_distance: float = (distance / radius)
+	var falloff: float = pow(1.0 - normalized_distance, falloff_exponent)
+	var direction: Vector3 = Vector3.UP
+
+	if distance > 0.001:
+		direction = offset / distance
+
+	# Una explosión interrumpe otras habilidades de movimiento.
+	if grapple.is_pulling():
+		grapple.cancel()
+
+	if dash.is_dashing():
+		dash.cancel(self)
+
+	if slide.active:
+		slide.stop()
+		stop_slide_animation()
+
+	var impulse: Vector3 = direction * force * falloff
+
+	# Una sola velocidad física: conserva el momentum existente
+	# y suma el impulso radial en los tres ejes.
+	velocity += impulse
+
+	# Evita que los raycasts interpreten el golpe como una escalada.
+	onledge = false
+
+# ============================================================
+# Player Data
+# ============================================================
+
+func _on_player_data_updated(id: int) -> void:
+	if id != get_multiplayer_authority():
+		return
+
+	var data: Statics.PlayerData = \
+		Game.instance.get_player(id)
+
+	if data == null:
+		return
+
+	role = data.role
+
+	_refresh_role_label()
+
+	if role != Statics.Role.gancho:
+		grapple.cancel()
+		
+	if role != Statics.Role.rapido:
+		dash.cancel(self)
+
+# ============================================================
+# Crosshair
+# ============================================================
+
+func _add_crosshair() -> void:
+	var layer: CanvasLayer = \
+		CanvasLayer.new()
+
+	layer.name = "Crosshair"
+	layer.layer = 20
+
+	var root: Control = \
+		Control.new()
+
+	root.set_anchors_and_offsets_preset(
+		Control.PRESET_FULL_RECT
+	)
+
+	root.mouse_filter = \
+		Control.MOUSE_FILTER_IGNORE
+
+	layer.add_child(root)
+
+	var color: Color = \
+		Color(
+			1,
+			1,
+			1,
+			0.95
+		)
+
+	root.add_child(
+		_crosshair_bar(
+			color,
+			-9.0,
+			9.0,
+			-1.0,
+			1.0
+		)
+	)
+
+	root.add_child(
+		_crosshair_bar(
+			color,
+			-1.0,
+			1.0,
+			-9.0,
+			9.0
+		)
+	)
+
+	add_child(layer)
+
+func _crosshair_bar(color: Color, left: float, right: float, top: float, bottom: float) -> ColorRect:
+	var bar: ColorRect = \
+		ColorRect.new()
+
+	bar.color = color
+
+	bar.mouse_filter = \
+		Control.MOUSE_FILTER_IGNORE
+
+	bar.set_anchors_preset(
+		Control.PRESET_CENTER
+	)
+
+	bar.offset_left = left
+	bar.offset_right = right
+	bar.offset_top = top
+	bar.offset_bottom = bottom
+
+	return bar
+
+# ============================================================
+# Tag HUD
+# ============================================================
+
+func _add_tag_hud() -> void:
+	var hud := TagCountdownHUD.new()
+	hud.name = "TagHUD"
+	add_child(hud)
+	hud.setup(TagGame)
+
+# ============================================================
+# Tag
+# ============================================================
+
+func _on_tag_zone_body_entered(body: Node3D) -> void:
+	if not is_multiplayer_authority():
+		return
+
+	if (TagGame.it_player_id != get_multiplayer_authority()):
+		return
+
+	if (body == self or not body is Player):
+		return
+
+	TagGame.request_tag.rpc_id(1, body.get_multiplayer_authority())
+
+func _on_player_exploded(player_id: int) -> void:
+	if (player_id != get_multiplayer_authority()):
+		return
+
+	set_physics_process(false)
+	set_process(false)
+	set_process_input(false)
+
+	visible = false
+	collision_layer = 0
+	collision_mask = 0
+
+	var body_shape: CollisionShape3D = \
+		get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if body_shape:
+		body_shape.disabled = true
+
+	if tag_zone:
+		tag_zone.monitoring = false
+		tag_zone.monitorable = false
+
+	# Modo espectador: solo en la pantalla del que murió
+	if is_multiplayer_authority():
+		grapple.cancel()
+		if slide.active:
+			slide.stop()
+		var crosshair := get_node_or_null("Crosshair")
+		if crosshair:
+			crosshair.queue_free()
+		add_child(SpectatorCamera.new())
+
+# ============================================================
+# Role Label
+# ============================================================
+
+func _refresh_role_label() -> void:
+	var role_name: String = \
+		Statics.get_role_name(role)
+
+	label_3d.text = (
+		"%s · %s"
+		% [
+			_player_name,
+			role_name
+		]
+	)
+
+	if is_multiplayer_authority():
+		Game.instance.player_id.text = ("Rol: %s" % role_name)
+		Game.instance.player_id.show()
+	
+	if _dash_hud:
+		_dash_hud.visible = (role == Statics.Role.rapido)
+
+
+# ============================================================
+# Network State
+# ============================================================
+
+func _send_state(
+	just_jumped: bool,
+	ledge_flag: bool
+) -> void:
+
+	send_data.rpc(
+		global_position,
+		global_rotation,
+		is_on_floor(),
+		just_jumped,
+		ledge_flag,
+		grapple.is_rope_visible(),
+		grapple.rope_end(),
+		slide.active
+	)
+
+
+@rpc(
+	"authority",
+	"call_remote",
+	"unreliable_ordered"
+)
+func send_data(
+	pos: Vector3,
+	rot: Vector3,
+	on_floor: bool,
+	just_jumped: bool,
+	on_ledge: bool,
+	grapple_visible: bool,
+	grapple_point: Vector3,
+	is_sliding: bool
+) -> void:
+
+	_target_position = pos
+	_target_rotation = rot
+
+	_remote_is_on_floor = on_floor
+	_remote_onledge = on_ledge
+
+	_remote_grapple_visible = \
+		grapple_visible
+
+	_remote_grapple_point = \
+		grapple_point
+
+	_remote_is_sliding = \
+		is_sliding
+
+
+	if just_jumped:
+		_remote_just_jumped = true
+
+
+# ============================================================
+# Podio
+# ============================================================
+
+func present_on_podium(player_name: String, is_winner: bool) -> void:
+	var body_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if body_shape:
+		body_shape.disabled = true
+
+	label_3d.text = player_name
+	label_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label_3d.modulate = Color(1.0, 0.86, 0.35) if is_winner else Color(0.78, 0.8, 0.84)
+	label_3d.font_size = 48
+
+	animations.play_podium(is_winner)
